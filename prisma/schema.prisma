@@ -1,0 +1,499 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== USERS & AUTH ====================
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String?  @map("first_name")
+  lastName  String?  @map("last_name")
+  avatar    String?
+  phone     String?
+  isActive  Boolean  @default(true) @map("is_active")
+  roleId    String   @map("role_id")
+  role      Role     @relation(fields: [roleId], references: [id])
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  orders         Order[]
+  refreshTokens  RefreshToken[]
+  notifications  Notification[]
+  activityLogs   ActivityLog[]
+
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  permissions Json     @default("[]") // Array of permission strings
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  users User[]
+
+  @@map("roles")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("refresh_tokens")
+}
+
+// ==================== CATEGORIES ====================
+
+model Category {
+  id          String     @id @default(uuid())
+  name        String
+  slug        String     @unique
+  description String?
+  image       String?
+  parentId    String?    @map("parent_id")
+  parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Category[] @relation("CategoryTree")
+  order       Int        @default(0)
+  isActive    Boolean    @default(true) @map("is_active")
+  metadata    Json?      @db.JsonB // Extra attributes: SEO, filters, etc.
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  products Product[]
+
+  @@map("categories")
+}
+
+// ==================== PRODUCTS ====================
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  sku         String   @unique
+  description String?  @db.Text
+  shortDesc   String?  @map("short_desc")
+  categoryId  String   @map("category_id")
+  category    Category @relation(fields: [categoryId], references: [id])
+  
+  // Dynamic attributes stored as JSONB
+  attributes  Json?    @db.JsonB // { "color": "red", "size": "XL", "material": "cotton" }
+  
+  // Pricing
+  basePrice   Decimal  @map("base_price") @db.Decimal(12, 2)
+  salePrice   Decimal? @map("sale_price") @db.Decimal(12, 2)
+  costPrice   Decimal? @map("cost_price") @db.Decimal(12, 2)
+  
+  // Stock & Inventory
+  stock       Int      @default(0)
+  lowStock    Int      @default(10) @map("low_stock")
+  
+  // Status
+  status      ProductStatus @default(DRAFT)
+  isActive    Boolean  @default(true) @map("is_active")
+  isFeatured  Boolean  @default(false) @map("is_featured")
+  
+  // SEO & Meta
+  metaTitle   String?  @map("meta_title")
+  metaDesc    String?  @map("meta_desc")
+  metaKeywords String? @map("meta_keywords")
+  
+  // Timestamps
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  publishedAt DateTime? @map("published_at")
+
+  images        ProductImage[]
+  variants      ProductVariant[]
+  orderItems    OrderItem[]
+  inventoryLogs InventoryLog[]
+
+  @@index([categoryId])
+  @@index([slug])
+  @@index([status])
+  @@map("products")
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+  OUT_OF_STOCK
+}
+
+model ProductImage {
+  id        String   @id @default(uuid())
+  productId String   @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  alt       String?
+  order     Int      @default(0)
+  isPrimary Boolean  @default(false) @map("is_primary")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+model ProductVariant {
+  id         String   @id @default(uuid())
+  productId  String   @map("product_id")
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku        String   @unique
+  name       String
+  
+  // Variant-specific attributes
+  attributes Json     @db.JsonB // { "size": "L", "color": "Blue" }
+  
+  price      Decimal  @db.Decimal(12, 2)
+  stock      Int      @default(0)
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  orderItems OrderItem[]
+
+  @@index([productId])
+  @@map("product_variants")
+}
+
+// ==================== INVENTORY ====================
+
+model InventoryLog {
+  id        String        @id @default(uuid())
+  productId String        @map("product_id")
+  product   Product       @relation(fields: [productId], references: [id])
+  type      InventoryType
+  quantity  Int
+  before    Int
+  after     Int
+  note      String?
+  createdBy String?       @map("created_by")
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  @@index([productId])
+  @@map("inventory_logs")
+}
+
+enum InventoryType {
+  PURCHASE
+  SALE
+  RETURN
+  ADJUSTMENT
+  DAMAGE
+}
+
+// ==================== CUSTOMERS ====================
+
+model Customer {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  phone     String?
+  avatar    String?
+  
+  // Address
+  addresses Json?    @db.JsonB // Array of addresses
+  
+  // Customer info
+  totalOrders  Int      @default(0) @map("total_orders")
+  totalSpent   Decimal  @default(0) @db.Decimal(12, 2) @map("total_spent")
+  loyaltyPoints Int     @default(0) @map("loyalty_points")
+  
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  orders Order[]
+
+  @@map("customers")
+}
+
+// ==================== ORDERS ====================
+
+model Order {
+  id            String      @id @default(uuid())
+  orderNumber   String      @unique @map("order_number")
+  customerId    String      @map("customer_id")
+  customer      Customer    @relation(fields: [customerId], references: [id])
+  userId        String?     @map("user_id") // Staff who processed
+  user          User?       @relation(fields: [userId], references: [id])
+  
+  status        OrderStatus @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING) @map("payment_status")
+  paymentMethod String?     @map("payment_method")
+  
+  // Pricing
+  subtotal      Decimal     @db.Decimal(12, 2)
+  discount      Decimal     @default(0) @db.Decimal(12, 2)
+  tax           Decimal     @default(0) @db.Decimal(12, 2)
+  shipping      Decimal     @default(0) @db.Decimal(12, 2)
+  total         Decimal     @db.Decimal(12, 2)
+  
+  // Shipping info
+  shippingAddress Json?     @db.JsonB
+  billingAddress  Json?     @db.JsonB
+  trackingNumber  String?   @map("tracking_number")
+  
+  notes         String?
+  metadata      Json?       @db.JsonB
+  
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  completedAt   DateTime?   @map("completed_at")
+
+  items         OrderItem[]
+  statusHistory OrderStatusHistory[]
+
+  @@index([customerId])
+  @@index([orderNumber])
+  @@index([status])
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+model OrderItem {
+  id        String          @id @default(uuid())
+  orderId   String          @map("order_id")
+  order     Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String          @map("product_id")
+  product   Product         @relation(fields: [productId], references: [id])
+  variantId String?         @map("variant_id")
+  variant   ProductVariant? @relation(fields: [variantId], references: [id])
+  
+  name      String
+  sku       String
+  quantity  Int
+  price     Decimal         @db.Decimal(12, 2)
+  total     Decimal         @db.Decimal(12, 2)
+  
+  metadata  Json?           @db.JsonB
+  createdAt DateTime        @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model OrderStatusHistory {
+  id        String      @id @default(uuid())
+  orderId   String      @map("order_id")
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    OrderStatus
+  note      String?
+  createdBy String?     @map("created_by")
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@map("order_status_history")
+}
+
+// ==================== DISCOUNTS ====================
+
+model Discount {
+  id          String        @id @default(uuid())
+  code        String        @unique
+  name        String
+  description String?
+  type        DiscountType
+  value       Decimal       @db.Decimal(12, 2)
+  
+  // Conditions
+  minOrderValue Decimal?    @map("min_order_value") @db.Decimal(12, 2)
+  maxDiscount   Decimal?    @map("max_discount") @db.Decimal(12, 2)
+  usageLimit    Int?        @map("usage_limit")
+  usageCount    Int         @default(0) @map("usage_count")
+  
+  // Validity
+  startDate   DateTime      @map("start_date")
+  endDate     DateTime      @map("end_date")
+  
+  isActive    Boolean       @default(true) @map("is_active")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@map("discounts")
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  FREE_SHIPPING
+}
+
+// ==================== CONTENT MANAGEMENT ====================
+
+model Page {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  content     String   @db.Text
+  excerpt     String?
+  
+  // SEO
+  metaTitle   String?  @map("meta_title")
+  metaDesc    String?  @map("meta_desc")
+  
+  status      PageStatus @default(DRAFT)
+  isActive    Boolean  @default(true) @map("is_active")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  publishedAt DateTime? @map("published_at")
+
+  @@map("pages")
+}
+
+enum PageStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Media {
+  id        String    @id @default(uuid())
+  filename  String
+  url       String
+  mimeType  String    @map("mime_type")
+  size      Int
+  width     Int?
+  height    Int?
+  alt       String?
+  title     String?
+  metadata  Json?     @db.JsonB
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@map("media")
+}
+
+// ==================== NOTIFICATIONS ====================
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type      String
+  title     String
+  message   String   @db.Text
+  data      Json?    @db.JsonB
+  
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("notifications")
+}
+
+// ==================== SETTINGS ====================
+
+model Setting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     Json     @db.JsonB
+  group     String?
+  isPublic  Boolean  @default(false) @map("is_public")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
+
+// ==================== ACTIVITY LOGS ====================
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  action    String
+  entity    String
+  entityId  String?  @map("entity_id")
+  changes   Json?    @db.JsonB
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@map("activity_logs")
+}
+
+// ==================== ANALYTICS ====================
+
+model Analytics {
+  id        String        @id @default(uuid())
+  type      AnalyticsType
+  category  String        // e.g., 'sales', 'traffic', 'products', 'customers'
+  metric    String        // e.g., 'revenue', 'page_views', 'conversion_rate'
+  value     Decimal       @db.Decimal(20, 4)
+  metadata  Json?         @db.JsonB // Additional data
+  date      DateTime      @db.Date
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  @@index([type, category, date])
+  @@index([metric, date])
+  @@map("analytics")
+}
+
+enum AnalyticsType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+  REALTIME
+}
+
+model PageView {
+  id        String   @id @default(uuid())
+  path      String
+  referrer  String?
+  userAgent String?  @map("user_agent")
+  ipAddress String?  @map("ip_address")
+  sessionId String?  @map("session_id")
+  userId    String?  @map("user_id")
+  duration  Int?     // Duration in seconds
+  metadata  Json?    @db.JsonB
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([path])
+  @@index([sessionId])
+  @@index([createdAt])
+  @@map("page_views")
+}
