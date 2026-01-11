@@ -2,6 +2,7 @@ import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec, swaggerUiOptions } from './config/swagger.config';
 import envConfig from './config/env.config';
@@ -31,7 +32,7 @@ class App {
   private initializeMiddlewares(): void {
     // Security
     this.app.use(helmet());
-
+    console.log(envConfig.get('CORS_ORIGIN'), 'envConfig');
     // CORS
     this.app.use(
       cors({
@@ -42,6 +43,9 @@ class App {
 
     // Compression
     this.app.use(compression());
+
+    // Cookie parser
+    this.app.use(cookieParser());
 
     // Body parser
     this.app.use(express.json({ limit: '10mb' }));

@@ -13,7 +13,7 @@ interface AuthRequest extends Request {
 class InventoryController {
   /**
    * @swagger
-   * /api/v1/admin/inventory:
+   * /shop/inventory:
    *   get:
    *     tags: [Inventory]
    *     summary: Get inventory logs
@@ -66,7 +66,7 @@ class InventoryController {
 
   /**
    * @swagger
-   * /api/v1/admin/inventory/{id}:
+   * /shop/inventory/{id}:
    *   get:
    *     tags: [Inventory]
    *     summary: Get inventory log by ID
@@ -99,7 +99,7 @@ class InventoryController {
 
   /**
    * @swagger
-   * /api/v1/admin/inventory:
+   * /shop/inventory:
    *   post:
    *     tags: [Inventory]
    *     summary: Create inventory log
@@ -140,7 +140,7 @@ class InventoryController {
 
   /**
    * @swagger
-   * /api/v1/admin/inventory/adjust:
+   * /shop/inventory/adjust:
    *   post:
    *     tags: [Inventory]
    *     summary: Adjust stock
@@ -181,7 +181,7 @@ class InventoryController {
 
   /**
    * @swagger
-   * /api/v1/admin/inventory/stats:
+   * /shop/inventory/stats:
    *   get:
    *     tags: [Inventory]
    *     summary: Get inventory statistics

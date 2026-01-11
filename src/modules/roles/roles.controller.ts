@@ -6,7 +6,7 @@ import { MESSAGES, HTTP_STATUS } from '@common/constants';
 class RolesController {
   /**
    * @swagger
-   * /roles:
+   * /admin/roles:
    *   get:
    *     tags: [Roles]
    *     summary: Get all roles with pagination
@@ -51,7 +51,7 @@ class RolesController {
 
   /**
    * @swagger
-   * /roles/{id}:
+   * /admin/roles/{id}:
    *   get:
    *     tags: [Roles]
    *     summary: Get role by ID
@@ -81,7 +81,7 @@ class RolesController {
 
   /**
    * @swagger
-   * /roles/slug/{slug}:
+   * /admin/roles/slug/{slug}:
    *   get:
    *     tags: [Roles]
    *     summary: Get role by slug
@@ -111,7 +111,7 @@ class RolesController {
 
   /**
    * @swagger
-   * /roles:
+   * /admin/roles:
    *   post:
    *     tags: [Roles]
    *     summary: Create new role
@@ -154,7 +154,7 @@ class RolesController {
 
   /**
    * @swagger
-   * /roles/{id}:
+   * /admin/roles/{id}:
    *   put:
    *     tags: [Roles]
    *     summary: Update role

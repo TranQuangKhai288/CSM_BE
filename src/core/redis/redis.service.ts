@@ -80,6 +80,10 @@ class RedisService {
     }
   }
 
+  async clearAll(): Promise<void> {
+    await this.client.flushDb();
+  }
+
   getClient() {
     return this.client;
   }

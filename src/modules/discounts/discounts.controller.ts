@@ -18,7 +18,7 @@ interface AuthRequest extends Request {
 class DiscountsController {
   /**
    * @swagger
-   * /api/v1/admin/discounts:
+   * /shop/discounts:
    *   get:
    *     tags: [Discounts]
    *     summary: Get all discounts
@@ -65,7 +65,7 @@ class DiscountsController {
 
   /**
    * @swagger
-   * /api/v1/admin/discounts/{id}:
+   * /shop/discounts/{id}:
    *   get:
    *     tags: [Discounts]
    *     summary: Get discount by ID
@@ -98,7 +98,7 @@ class DiscountsController {
 
   /**
    * @swagger
-   * /api/v1/shop/discounts/code/{code}:
+   * /discounts/code/{code}:
    *   get:
    *     tags: [Discounts]
    *     summary: Get discount by code (public)
@@ -128,7 +128,7 @@ class DiscountsController {
 
   /**
    * @swagger
-   * /api/v1/admin/discounts:
+   * /shop/discounts:
    *   post:
    *     tags: [Discounts]
    *     summary: Create new discount
@@ -185,7 +185,7 @@ class DiscountsController {
 
   /**
    * @swagger
-   * /api/v1/admin/discounts/{id}:
+   * /shop/discounts/{id}:
    *   put:
    *     tags: [Discounts]
    *     summary: Update discount
@@ -225,7 +225,7 @@ class DiscountsController {
 
   /**
    * @swagger
-   * /api/v1/admin/discounts/{id}:
+   * /shop/discounts/{id}:
    *   delete:
    *     tags: [Discounts]
    *     summary: Delete discount
@@ -258,7 +258,7 @@ class DiscountsController {
 
   /**
    * @swagger
-   * /api/v1/shop/discounts/validate:
+   * /discounts/validate:
    *   post:
    *     tags: [Discounts]
    *     summary: Validate discount code
@@ -291,7 +291,7 @@ class DiscountsController {
 
   /**
    * @swagger
-   * /api/v1/admin/discounts/stats:
+   * /shop/discounts/stats:
    *   get:
    *     tags: [Discounts]
    *     summary: Get discount statistics
@@ -315,7 +315,7 @@ class DiscountsController {
 
   /**
    * @swagger
-   * /api/v1/shop/discounts/active:
+   * /discounts/active:
    *   get:
    *     tags: [Discounts]
    *     summary: Get active discounts (public)

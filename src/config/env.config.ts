@@ -103,7 +103,8 @@ class EnvConfigService {
 
       // Upload
       MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE || '5242880'),
-      ALLOWED_FILE_TYPES: process.env.ALLOWED_FILE_TYPES || 'image/jpeg,image/png,image/webp,image/gif',
+      ALLOWED_FILE_TYPES:
+        process.env.ALLOWED_FILE_TYPES || 'image/jpeg,image/png,image/webp,image/gif',
 
       // Pagination
       DEFAULT_PAGE_SIZE: parseInt(process.env.DEFAULT_PAGE_SIZE || '20'),

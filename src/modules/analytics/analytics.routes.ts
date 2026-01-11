@@ -23,7 +23,7 @@ router.use(authGuard);
 router.get(
   '/dashboard',
   permissionGuard([PERMISSIONS.ANALYTICS_READ]),
-  validate([dashboardStatsValidation]),
+  validate(dashboardStatsValidation),
   analyticsController.getDashboardStats
 );
 
@@ -31,14 +31,14 @@ router.get(
 router.get(
   '/sales/overview',
   permissionGuard([PERMISSIONS.ANALYTICS_READ]),
-  validate([salesAnalyticsValidation]),
+  validate(salesAnalyticsValidation),
   analyticsController.getSalesAnalytics
 );
 
 router.get(
   '/sales/over-time',
   permissionGuard([PERMISSIONS.ANALYTICS_READ]),
-  validate([salesAnalyticsValidation]),
+  validate(salesAnalyticsValidation),
   analyticsController.getSalesOverTime
 );
 
@@ -46,7 +46,7 @@ router.get(
 router.get(
   '/products/overview',
   permissionGuard([PERMISSIONS.ANALYTICS_READ]),
-  validate([productAnalyticsValidation]),
+  validate(productAnalyticsValidation),
   analyticsController.getProductAnalytics
 );
 
@@ -60,7 +60,7 @@ router.get(
 router.get(
   '/customers/overview',
   permissionGuard([PERMISSIONS.ANALYTICS_READ]),
-  validate([customerAnalyticsValidation]),
+  validate(customerAnalyticsValidation),
   analyticsController.getCustomerAnalytics
 );
 
@@ -68,14 +68,14 @@ router.get(
 router.get(
   '/page-views/stats',
   permissionGuard([PERMISSIONS.ANALYTICS_READ]),
-  validate([analyticsQueryValidation]),
+  validate(analyticsQueryValidation),
   analyticsController.getPageViewStats
 );
 
 router.get(
   '/page-views',
   permissionGuard([PERMISSIONS.ANALYTICS_READ]),
-  validate([analyticsQueryValidation]),
+  validate(analyticsQueryValidation),
   analyticsController.getPageViews
 );
 
@@ -83,14 +83,14 @@ router.get(
 router.get(
   '/',
   permissionGuard([PERMISSIONS.ANALYTICS_READ]),
-  validate([analyticsQueryValidation]),
+  validate(analyticsQueryValidation),
   analyticsController.getAnalytics
 );
 
 router.post(
   '/',
   permissionGuard([PERMISSIONS.ANALYTICS_CREATE]),
-  validate([createAnalyticsValidation]),
+  validate(createAnalyticsValidation),
   analyticsController.createAnalytics
 );
 
@@ -103,7 +103,7 @@ router.get(
 router.patch(
   '/:id',
   permissionGuard([PERMISSIONS.ANALYTICS_UPDATE]),
-  validate([updateAnalyticsValidation]),
+  validate(updateAnalyticsValidation),
   analyticsController.updateAnalytics
 );
 

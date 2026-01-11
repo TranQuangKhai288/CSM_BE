@@ -2,20 +2,12 @@ import { body } from 'express-validator';
 import { REGEX } from '@common/constants';
 
 export const loginValidation = [
-  body('email')
-    .isEmail()
-    .withMessage('Valid email is required')
-    .normalizeEmail(),
-  body('password')
-    .notEmpty()
-    .withMessage('Password is required'),
+  body('email').isEmail().withMessage('Valid email is required').normalizeEmail(),
+  body('password').notEmpty().withMessage('Password is required'),
 ];
 
 export const registerValidation = [
-  body('email')
-    .isEmail()
-    .withMessage('Valid email is required')
-    .normalizeEmail(),
+  body('email').isEmail().withMessage('Valid email is required').normalizeEmail(),
   body('password')
     .matches(REGEX.PASSWORD)
     .withMessage(
@@ -36,15 +28,11 @@ export const registerValidation = [
 ];
 
 export const refreshTokenValidation = [
-  body('refreshToken')
-    .notEmpty()
-    .withMessage('Refresh token is required'),
+  body('refreshToken').notEmpty().withMessage('Refresh token is required'),
 ];
 
 export const changePasswordValidation = [
-  body('oldPassword')
-    .notEmpty()
-    .withMessage('Old password is required'),
+  body('oldPassword').notEmpty().withMessage('Old password is required'),
   body('newPassword')
     .matches(REGEX.PASSWORD)
     .withMessage(

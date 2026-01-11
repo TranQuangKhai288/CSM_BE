@@ -13,11 +13,11 @@ export const permissionGuard = (requiredPermissions: string[]) => {
       }
 
       const userId = req.user.userId;
-
       // Check cache first
       let userPermissions = await redisService.getJSON<string[]>(
         CACHE_KEYS.USER_PERMISSIONS(userId)
       );
+      console.log('userPermissions: ', userPermissions);
 
       if (!userPermissions) {
         // Fetch from database
@@ -50,7 +50,6 @@ export const permissionGuard = (requiredPermissions: string[]) => {
       if (userPermissions.includes('*')) {
         return next();
       }
-
       // Check if user has required permissions
       const hasPermission = requiredPermissions.every((permission) => {
         // Check exact permission or wildcard (e.g., products.* matches products.read)

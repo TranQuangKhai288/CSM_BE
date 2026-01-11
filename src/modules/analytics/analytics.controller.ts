@@ -363,7 +363,7 @@ class AnalyticsController {
 
   /**
    * @swagger
-   * /public/analytics/page-view:
+   * /analytics/page-view:
    *   post:
    *     tags: [Analytics]
    *     summary: Track page view

@@ -78,8 +78,8 @@ export const userListValidation = [
   query('search')
     .optional()
     .trim()
-    .isLength({ min: 1, max: 100 })
-    .withMessage('Search term must be between 1 and 100 characters'),
+    .isLength({ max: 100 })
+    .withMessage('Search term must not exceed 100 characters'),
 
   query('roleId').optional().matches(REGEX.UUID).withMessage('Invalid role ID format'),
 

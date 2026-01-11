@@ -6,7 +6,7 @@ import { MESSAGES, HTTP_STATUS } from '@common/constants';
 class UsersController {
   /**
    * @swagger
-   * /users:
+   * /admin/users:
    *   get:
    *     tags: [Users]
    *     summary: Get all users with pagination
@@ -58,7 +58,7 @@ class UsersController {
 
   /**
    * @swagger
-   * /users/stats:
+   * /admin/users/stats:
    *   get:
    *     tags: [Users]
    *     summary: Get user statistics
@@ -79,7 +79,7 @@ class UsersController {
 
   /**
    * @swagger
-   * /users/{id}:
+   * /admin/users/{id}:
    *   get:
    *     tags: [Users]
    *     summary: Get user by ID
@@ -108,7 +108,7 @@ class UsersController {
 
   /**
    * @swagger
-   * /users:
+   * /admin/users:
    *   post:
    *     tags: [Users]
    *     summary: Create new user
@@ -156,7 +156,7 @@ class UsersController {
 
   /**
    * @swagger
-   * /users/{id}:
+   * /admin/users/{id}:
    *   put:
    *     tags: [Users]
    *     summary: Update user
