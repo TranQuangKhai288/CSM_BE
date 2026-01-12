@@ -61,14 +61,14 @@ export class InventoryService {
               stock: true,
             },
           },
-          user: {
-            select: {
-              id: true,
-              email: true,
-              firstName: true,
-              lastName: true,
-            },
-          },
+          // user: {
+          //   select: {
+          //     id: true,
+          //     email: true,
+          //     firstName: true,
+          //     lastName: true,
+          //   },
+          // },
         },
         orderBy: { [sortBy]: sortOrder },
         skip,
@@ -103,14 +103,14 @@ export class InventoryService {
             stock: true,
           },
         },
-        user: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
+        // user: {
+        //   select: {
+        //     id: true,
+        //     email: true,
+        //     firstName: true,
+        //     lastName: true,
+        //   },
+        // },
       },
     });
 

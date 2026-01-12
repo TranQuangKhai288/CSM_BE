@@ -277,9 +277,9 @@ class CategoriesService {
         parentId: data.parentId || null,
         image: data.image,
         isActive: data.isActive !== undefined ? data.isActive : true,
-        metaTitle: data.metaTitle,
-        metaDescription: data.metaDescription,
-        metaKeywords: data.metaKeywords,
+        // metaTitle: data.metaTitle,
+        // metaDescription: data.metaDescription,
+        // metaKeywords: data.metaKeywords,
       },
       include: {
         parent: {

@@ -266,7 +266,7 @@ export class DiscountsService {
     }
 
     // Check minimum order value
-    if (discount.minOrderValue && data.orderTotal < discount.minOrderValue) {
+    if (discount.minOrderValue && data.orderTotal < discount.minOrderValue.toNumber()) {
       return {
         valid: false,
         message: `Minimum order value of ${discount.minOrderValue} required`,
@@ -278,18 +278,18 @@ export class DiscountsService {
 
     switch (discount.type) {
       case 'PERCENTAGE':
-        discountAmount = (data.orderTotal * discount.value) / 100;
-        if (discount.maxDiscount && discountAmount > discount.maxDiscount) {
-          discountAmount = discount.maxDiscount;
+        discountAmount = (Number(data.orderTotal) * Number(discount.value)) / 100;
+        if (discount.maxDiscount && discountAmount > discount.maxDiscount.toNumber()) {
+          discountAmount = discount.maxDiscount.toNumber();
         }
         break;
 
       case 'FIXED_AMOUNT':
-        discountAmount = Math.min(discount.value, data.orderTotal);
+        discountAmount = Math.min(discount.value.toNumber(), Number(data.orderTotal));
         break;
 
       case 'FREE_SHIPPING':
-        discountAmount = discount.value; // Shipping cost should be passed
+        discountAmount = discount.value.toNumber(); // Shipping cost should be passed
         break;
     }
 

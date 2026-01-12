@@ -36,7 +36,7 @@ class App {
     // CORS
     this.app.use(
       cors({
-        origin: envConfig.get('CORS_ORIGIN').split(','),
+        origin: '*',
         credentials: true,
       })
     );
@@ -52,7 +52,7 @@ class App {
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
     // Strip empty query params
-    this.app.use((req, res, next) => {
+    this.app.use((req, _res, next) => {
       if (req.query) {
         Object.keys(req.query).forEach((key) => {
           if (req.query[key] === '') {

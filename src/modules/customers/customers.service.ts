@@ -138,7 +138,7 @@ class CustomersService {
         lastName: data.lastName,
         phone: data.phone,
         avatar: data.avatar,
-        addresses: data.addresses || [],
+        addresses: data.addresses ? JSON.stringify(data.addresses) : JSON.stringify([]),
         isActive: data.isActive !== undefined ? data.isActive : true,
       },
     });
@@ -180,7 +180,7 @@ class CustomersService {
         ...(data.lastName && { lastName: data.lastName }),
         ...(data.phone !== undefined && { phone: data.phone }),
         ...(data.avatar !== undefined && { avatar: data.avatar }),
-        ...(data.addresses !== undefined && { addresses: data.addresses }),
+        ...(data.addresses !== undefined && { addresses: JSON.stringify(data.addresses) }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
       },
     });
@@ -296,7 +296,7 @@ class CustomersService {
 
   // Deduct loyalty points
   async deductLoyaltyPoints(customerId: string, points: number) {
-    const customer = await this.getCustomerById(customerId);
+    const customer = (await this.getCustomerById(customerId)) as { loyaltyPoints: number };
 
     if (customer.loyaltyPoints < points) {
       throw new ConflictError('Insufficient loyalty points', RESPONSE_CODES.VALIDATION_ERROR);
