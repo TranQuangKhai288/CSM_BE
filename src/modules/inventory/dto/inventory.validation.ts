@@ -25,7 +25,7 @@ export const createInventoryLogValidation = [
     .notEmpty()
     .withMessage('Quantity is required'),
 
-  body('note').optional().trim().isLength({ max: 500 }).withMessage('Note is too long'),
+  body('note').optional({ values: 'falsy' }).trim().isLength({ max: 500 }).withMessage('Note is too long'),
 ];
 
 export const adjustStockValidation = [
@@ -49,48 +49,48 @@ export const adjustStockValidation = [
     .isIn(['ADJUSTMENT', 'DAMAGE'])
     .withMessage('Invalid adjustment type'),
 
-  body('note').optional().trim().isLength({ max: 500 }).withMessage('Note is too long'),
+  body('note').optional({ values: 'falsy' }).trim().isLength({ max: 500 }).withMessage('Note is too long'),
 ];
 
 export const inventoryListValidation = [
-  query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+  query('page').optional({ values: 'falsy' }).isInt({ min: 1 }).withMessage('Page must be a positive integer'),
 
   query('pageSize')
-    .optional()
+    .optional({ values: 'falsy' })
     .isInt({ min: 1, max: 100 })
     .withMessage('Page size must be between 1 and 100'),
 
-  query('productId').optional().trim().matches(REGEX.UUID).withMessage('Invalid product ID format'),
+  query('productId').optional({ values: 'falsy' }).trim().matches(REGEX.UUID).withMessage('Invalid product ID format'),
 
   query('type')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .isIn(['PURCHASE', 'SALE', 'RETURN', 'ADJUSTMENT', 'DAMAGE'])
     .withMessage('Invalid inventory type'),
 
-  query('startDate').optional().isISO8601().withMessage('Invalid start date format'),
+  query('startDate').optional({ values: 'falsy' }).isISO8601().withMessage('Invalid start date format'),
 
-  query('endDate').optional().isISO8601().withMessage('Invalid end date format'),
+  query('endDate').optional({ values: 'falsy' }).isISO8601().withMessage('Invalid end date format'),
 
   query('sortBy')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .isIn(['createdAt', 'quantity'])
     .withMessage('Invalid sort field'),
 
-  query('sortOrder').optional().trim().isIn(['asc', 'desc']).withMessage('Invalid sort order'),
+  query('sortOrder').optional({ values: 'falsy' }).trim().isIn(['asc', 'desc']).withMessage('Invalid sort order'),
 ];
 
 export const lowStockValidation = [
   query('threshold')
-    .optional()
+    .optional({ values: 'falsy' })
     .isInt({ min: 0 })
     .withMessage('Threshold must be a non-negative integer'),
 
-  query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+  query('page').optional({ values: 'falsy' }).isInt({ min: 1 }).withMessage('Page must be a positive integer'),
 
   query('pageSize')
-    .optional()
+    .optional({ values: 'falsy' })
     .isInt({ min: 1, max: 100 })
     .withMessage('Page size must be between 1 and 100'),
 ];

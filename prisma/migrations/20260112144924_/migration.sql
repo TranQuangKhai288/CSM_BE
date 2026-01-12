@@ -16,6 +16,9 @@ CREATE TYPE "DiscountType" AS ENUM ('PERCENTAGE', 'FIXED_AMOUNT', 'FREE_SHIPPING
 -- CreateEnum
 CREATE TYPE "PageStatus" AS ENUM ('DRAFT', 'PUBLISHED', 'ARCHIVED');
 
+-- CreateEnum
+CREATE TYPE "AnalyticsType" AS ENUM ('DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY', 'REALTIME');
+
 -- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
@@ -319,6 +322,36 @@ CREATE TABLE "activity_logs" (
     CONSTRAINT "activity_logs_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "analytics" (
+    "id" TEXT NOT NULL,
+    "type" "AnalyticsType" NOT NULL,
+    "category" TEXT NOT NULL,
+    "metric" TEXT NOT NULL,
+    "value" DECIMAL(20,4) NOT NULL,
+    "metadata" JSONB,
+    "date" DATE NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "analytics_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "page_views" (
+    "id" TEXT NOT NULL,
+    "path" TEXT NOT NULL,
+    "referrer" TEXT,
+    "user_agent" TEXT,
+    "ip_address" TEXT,
+    "session_id" TEXT,
+    "user_id" TEXT,
+    "duration" INTEGER,
+    "metadata" JSONB,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "page_views_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
@@ -399,6 +432,21 @@ CREATE INDEX "activity_logs_user_id_idx" ON "activity_logs"("user_id");
 
 -- CreateIndex
 CREATE INDEX "activity_logs_entity_entity_id_idx" ON "activity_logs"("entity", "entity_id");
+
+-- CreateIndex
+CREATE INDEX "analytics_type_category_date_idx" ON "analytics"("type", "category", "date");
+
+-- CreateIndex
+CREATE INDEX "analytics_metric_date_idx" ON "analytics"("metric", "date");
+
+-- CreateIndex
+CREATE INDEX "page_views_path_idx" ON "page_views"("path");
+
+-- CreateIndex
+CREATE INDEX "page_views_session_id_idx" ON "page_views"("session_id");
+
+-- CreateIndex
+CREATE INDEX "page_views_created_at_idx" ON "page_views"("created_at");
 
 -- AddForeignKey
 ALTER TABLE "users" ADD CONSTRAINT "users_role_id_fkey" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

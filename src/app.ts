@@ -51,6 +51,18 @@ class App {
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+    // Strip empty query params
+    this.app.use((req, res, next) => {
+      if (req.query) {
+        Object.keys(req.query).forEach((key) => {
+          if (req.query[key] === '') {
+            delete req.query[key];
+          }
+        });
+      }
+      next();
+    });
+
     // Logger
     this.app.use(loggerMiddleware);
 
@@ -98,12 +110,8 @@ class App {
   }
 
   private async connectRedis(): Promise<void> {
-    try {
-      await redisService.connect();
-    } catch (error) {
-      logger.error('Failed to connect to Redis:', error);
-      process.exit(1);
-    }
+    // Redis service now handles its own connection errors and will fallback gracefully
+    await redisService.connect();
   }
 
   public async listen(): Promise<void> {

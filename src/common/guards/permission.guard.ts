@@ -17,7 +17,6 @@ export const permissionGuard = (requiredPermissions: string[]) => {
       let userPermissions = await redisService.getJSON<string[]>(
         CACHE_KEYS.USER_PERMISSIONS(userId)
       );
-      console.log('userPermissions: ', userPermissions);
 
       if (!userPermissions) {
         // Fetch from database
@@ -37,6 +36,7 @@ export const permissionGuard = (requiredPermissions: string[]) => {
         }
 
         userPermissions = user.role.permissions as string[];
+        console.log('userPermissions: ', userPermissions);
 
         // Cache permissions
         await redisService.setJSON(

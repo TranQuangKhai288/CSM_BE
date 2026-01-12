@@ -10,25 +10,25 @@ export const createProductValidation = [
     .withMessage('Product name must be between 2 and 200 characters'),
 
   body('slug')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .matches(/^[a-z0-9-]+$/)
     .withMessage('Slug must contain only lowercase letters, numbers, and hyphens'),
 
   body('sku')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .matches(/^[A-Z0-9-]+$/i)
     .withMessage('SKU must contain only letters, numbers, and hyphens'),
 
   body('description')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .isLength({ max: 5000 })
     .withMessage('Description must not exceed 5000 characters'),
 
   body('shortDescription')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .isLength({ max: 500 })
     .withMessage('Short description must not exceed 500 characters'),
@@ -47,58 +47,58 @@ export const createProductValidation = [
     .withMessage('Price must be a positive number'),
 
   body('compareAtPrice')
-    .optional()
+    .optional({ values: 'falsy' })
     .isFloat({ min: 0 })
     .withMessage('Compare at price must be a positive number'),
 
   body('costPrice')
-    .optional()
+    .optional({ values: 'falsy' })
     .isFloat({ min: 0 })
     .withMessage('Cost price must be a positive number'),
 
   // Inventory validation
-  body('trackInventory').optional().isBoolean().withMessage('trackInventory must be a boolean'),
+  body('trackInventory').optional({ values: 'falsy' }).isBoolean().withMessage('trackInventory must be a boolean'),
 
   body('stockQuantity')
-    .optional()
+    .optional({ values: 'falsy' })
     .isInt({ min: 0 })
     .withMessage('Stock quantity must be a non-negative integer'),
 
   body('lowStockThreshold')
-    .optional()
+    .optional({ values: 'falsy' })
     .isInt({ min: 0 })
     .withMessage('Low stock threshold must be a non-negative integer'),
 
   // Attributes validation (JSONB)
-  body('attributes').optional().isObject().withMessage('Attributes must be a valid JSON object'),
+  body('attributes').optional({ values: 'falsy' }).isObject().withMessage('Attributes must be a valid JSON object'),
 
   // Media validation
-  body('images').optional().isArray().withMessage('Images must be an array'),
+  body('images').optional({ values: 'falsy' }).isArray().withMessage('Images must be an array'),
 
-  body('images.*').optional().isURL().withMessage('Each image must be a valid URL'),
+  body('images.*').optional({ values: 'falsy' }).isURL().withMessage('Each image must be a valid URL'),
 
-  body('featuredImage').optional().isURL().withMessage('Featured image must be a valid URL'),
+  body('featuredImage').optional({ values: 'falsy' }).isURL().withMessage('Featured image must be a valid URL'),
 
   // Status validation
-  body('isActive').optional().isBoolean().withMessage('isActive must be a boolean'),
+  body('isActive').optional({ values: 'falsy' }).isBoolean().withMessage('isActive must be a boolean'),
 
-  body('isFeatured').optional().isBoolean().withMessage('isFeatured must be a boolean'),
+  body('isFeatured').optional({ values: 'falsy' }).isBoolean().withMessage('isFeatured must be a boolean'),
 
   // SEO validation
   body('metaTitle')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .isLength({ max: 200 })
     .withMessage('Meta title must not exceed 200 characters'),
 
   body('metaDescription')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .isLength({ max: 500 })
     .withMessage('Meta description must not exceed 500 characters'),
 
   body('metaKeywords')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .isLength({ max: 500 })
     .withMessage('Meta keywords must not exceed 500 characters'),
@@ -106,142 +106,142 @@ export const createProductValidation = [
 
 export const updateProductValidation = [
   body('name')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .isLength({ min: 2, max: 200 })
     .withMessage('Product name must be between 2 and 200 characters'),
 
   body('slug')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .matches(/^[a-z0-9-]+$/)
     .withMessage('Slug must contain only lowercase letters, numbers, and hyphens'),
 
   body('sku')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .matches(/^[A-Z0-9-]+$/i)
     .withMessage('SKU must contain only letters, numbers, and hyphens'),
 
   body('description')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .isLength({ max: 5000 })
     .withMessage('Description must not exceed 5000 characters'),
 
   body('shortDescription')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .isLength({ max: 500 })
     .withMessage('Short description must not exceed 500 characters'),
 
-  body('categoryId').optional().matches(REGEX.UUID).withMessage('Invalid category ID format'),
+  body('categoryId').optional({ values: 'falsy' }).matches(REGEX.UUID).withMessage('Invalid category ID format'),
 
-  body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
+  body('price').optional({ values: 'falsy' }).isFloat({ min: 0 }).withMessage('Price must be a positive number'),
 
   body('compareAtPrice')
-    .optional()
+    .optional({ values: 'falsy' })
     .custom((value) => value === null || (typeof value === 'number' && value >= 0))
     .withMessage('Compare at price must be a positive number or null'),
 
   body('costPrice')
-    .optional()
+    .optional({ values: 'falsy' })
     .custom((value) => value === null || (typeof value === 'number' && value >= 0))
     .withMessage('Cost price must be a positive number or null'),
 
-  body('trackInventory').optional().isBoolean().withMessage('trackInventory must be a boolean'),
+  body('trackInventory').optional({ values: 'falsy' }).isBoolean().withMessage('trackInventory must be a boolean'),
 
   body('stockQuantity')
-    .optional()
+    .optional({ values: 'falsy' })
     .isInt({ min: 0 })
     .withMessage('Stock quantity must be a non-negative integer'),
 
   body('lowStockThreshold')
-    .optional()
+    .optional({ values: 'falsy' })
     .custom((value) => value === null || (typeof value === 'number' && value >= 0))
     .withMessage('Low stock threshold must be a non-negative integer or null'),
 
   body('attributes')
-    .optional()
+    .optional({ values: 'falsy' })
     .custom((value) => value === null || typeof value === 'object')
     .withMessage('Attributes must be a valid JSON object or null'),
 
-  body('images').optional().isArray().withMessage('Images must be an array'),
+  body('images').optional({ values: 'falsy' }).isArray().withMessage('Images must be an array'),
 
-  body('images.*').optional().isURL().withMessage('Each image must be a valid URL'),
+  body('images.*').optional({ values: 'falsy' }).isURL().withMessage('Each image must be a valid URL'),
 
   body('featuredImage')
-    .optional()
+    .optional({ values: 'falsy' })
     .custom((value) => value === null || /^https?:\/\/.+/.test(value))
     .withMessage('Featured image must be a valid URL or null'),
 
-  body('isActive').optional().isBoolean().withMessage('isActive must be a boolean'),
+  body('isActive').optional({ values: 'falsy' }).isBoolean().withMessage('isActive must be a boolean'),
 
-  body('isFeatured').optional().isBoolean().withMessage('isFeatured must be a boolean'),
+  body('isFeatured').optional({ values: 'falsy' }).isBoolean().withMessage('isFeatured must be a boolean'),
 
   body('metaTitle')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .isLength({ max: 200 })
     .withMessage('Meta title must not exceed 200 characters'),
 
   body('metaDescription')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .isLength({ max: 500 })
     .withMessage('Meta description must not exceed 500 characters'),
 
   body('metaKeywords')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .isLength({ max: 500 })
     .withMessage('Meta keywords must not exceed 500 characters'),
 ];
 
 export const productListValidation = [
-  query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+  query('page').optional({ values: 'falsy' }).isInt({ min: 1 }).withMessage('Page must be a positive integer'),
 
   query('pageSize')
-    .optional()
+    .optional({ values: 'falsy' })
     .isInt({ min: 1, max: 100 })
     .withMessage('Page size must be between 1 and 100'),
 
   query('search')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .isLength({ min: 1, max: 100 })
     .withMessage('Search term must be between 1 and 100 characters'),
 
-  query('categoryId').optional().matches(REGEX.UUID).withMessage('Invalid category ID format'),
+  query('categoryId').optional({ values: 'falsy' }).matches(REGEX.UUID).withMessage('Invalid category ID format'),
 
-  query('isActive').optional().isBoolean().withMessage('isActive must be a boolean'),
+  query('isActive').optional({ values: 'falsy' }).isBoolean().withMessage('isActive must be a boolean'),
 
-  query('isFeatured').optional().isBoolean().withMessage('isFeatured must be a boolean'),
+  query('isFeatured').optional({ values: 'falsy' }).isBoolean().withMessage('isFeatured must be a boolean'),
 
   query('minPrice')
-    .optional()
+    .optional({ values: 'falsy' })
     .isFloat({ min: 0 })
     .withMessage('Min price must be a positive number'),
 
   query('maxPrice')
-    .optional()
+    .optional({ values: 'falsy' })
     .isFloat({ min: 0 })
     .withMessage('Max price must be a positive number'),
 
-  query('inStock').optional().isBoolean().withMessage('inStock must be a boolean'),
+  query('inStock').optional({ values: 'falsy' }).isBoolean().withMessage('inStock must be a boolean'),
 
   query('status')
-    .optional()
+    .optional({ values: 'falsy' })
     .isIn(['DRAFT', 'PUBLISHED', 'ARCHIVED', 'OUT_OF_STOCK'])
     .withMessage('status must be one of: DRAFT, PUBLISHED, ARCHIVED, OUT_OF_STOCK'),
 
   query('sortBy')
-    .optional()
+    .optional({ values: 'falsy' })
     .isIn(['name', 'basePrice', 'createdAt', 'stock'])
     .withMessage('sortBy must be one of: name, basePrice, createdAt, stock'),
 
   query('sortOrder')
-    .optional()
+    .optional({ values: 'falsy' })
     .isIn(['asc', 'desc'])
     .withMessage('sortOrder must be either asc or desc'),
 ];

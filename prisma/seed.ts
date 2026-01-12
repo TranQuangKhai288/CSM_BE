@@ -1,7 +1,19 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
 
-const prisma = new PrismaClient();
+dotenv.config();
+
+const databaseUrl = process.env.DATABASE_URL;
+const directUrl = process.env.DIRECT_URL;
+
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: directUrl || databaseUrl,
+    },
+  },
+});
 
 async function main() {
   console.log('🌱 Starting seed...');

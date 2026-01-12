@@ -30,33 +30,33 @@ export const createUserValidation = [
     .matches(REGEX.UUID)
     .withMessage('Invalid role ID format'),
 
-  body('phone').optional().matches(REGEX.PHONE).withMessage('Invalid phone number format'),
+  body('phone').optional({ values: 'falsy' }).matches(REGEX.PHONE).withMessage('Invalid phone number format'),
 
-  body('avatar').optional().isURL().withMessage('Avatar must be a valid URL'),
+  body('avatar').optional({ values: 'falsy' }).isURL().withMessage('Avatar must be a valid URL'),
 ];
 
 export const updateUserValidation = [
-  body('email').optional().isEmail().withMessage('Valid email is required').normalizeEmail(),
+  body('email').optional({ values: 'falsy' }).isEmail().withMessage('Valid email is required').normalizeEmail(),
 
   body('firstName')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .isLength({ min: 2, max: 50 })
     .withMessage('First name must be between 2 and 50 characters'),
 
   body('lastName')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .isLength({ min: 2, max: 50 })
     .withMessage('Last name must be between 2 and 50 characters'),
 
-  body('roleId').optional().matches(REGEX.UUID).withMessage('Invalid role ID format'),
+  body('roleId').optional({ values: 'falsy' }).matches(REGEX.UUID).withMessage('Invalid role ID format'),
 
-  body('phone').optional().matches(REGEX.PHONE).withMessage('Invalid phone number format'),
+  body('phone').optional({ values: 'falsy' }).matches(REGEX.PHONE).withMessage('Invalid phone number format'),
 
-  body('avatar').optional().isURL().withMessage('Avatar must be a valid URL'),
+  body('avatar').optional({ values: 'falsy' }).isURL().withMessage('Avatar must be a valid URL'),
 
-  body('isActive').optional().isBoolean().withMessage('isActive must be a boolean'),
+  body('isActive').optional({ values: 'falsy' }).isBoolean().withMessage('isActive must be a boolean'),
 ];
 
 export const updateUserPasswordValidation = [
@@ -68,30 +68,30 @@ export const updateUserPasswordValidation = [
 ];
 
 export const userListValidation = [
-  query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+  query('page').optional({ values: 'falsy' }).isInt({ min: 1 }).withMessage('Page must be a positive integer'),
 
   query('pageSize')
-    .optional()
+    .optional({ values: 'falsy' })
     .isInt({ min: 1, max: 100 })
     .withMessage('Page size must be between 1 and 100'),
 
   query('search')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .isLength({ max: 100 })
     .withMessage('Search term must not exceed 100 characters'),
 
-  query('roleId').optional().matches(REGEX.UUID).withMessage('Invalid role ID format'),
+  query('roleId').optional({ values: 'falsy' }).matches(REGEX.UUID).withMessage('Invalid role ID format'),
 
-  query('isActive').optional().isBoolean().withMessage('isActive must be a boolean'),
+  query('isActive').optional({ values: 'falsy' }).isBoolean().withMessage('isActive must be a boolean'),
 
   query('sortBy')
-    .optional()
+    .optional({ values: 'falsy' })
     .isIn(['createdAt', 'email', 'firstName'])
     .withMessage('sortBy must be one of: createdAt, email, firstName'),
 
   query('sortOrder')
-    .optional()
+    .optional({ values: 'falsy' })
     .isIn(['asc', 'desc'])
     .withMessage('sortOrder must be either asc or desc'),
 ];

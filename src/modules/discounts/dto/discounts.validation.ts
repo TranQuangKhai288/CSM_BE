@@ -18,7 +18,7 @@ export const createDiscountValidation = [
     .withMessage('Name must be between 3 and 200 characters'),
 
   body('description')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .isLength({ max: 500 })
     .withMessage('Description is too long'),
@@ -37,17 +37,17 @@ export const createDiscountValidation = [
     .withMessage('Value is required'),
 
   body('minOrderValue')
-    .optional()
+    .optional({ values: 'falsy' })
     .isFloat({ min: 0 })
     .withMessage('Minimum order value must be non-negative'),
 
   body('maxDiscount')
-    .optional()
+    .optional({ values: 'falsy' })
     .isFloat({ min: 0 })
     .withMessage('Maximum discount must be non-negative'),
 
   body('usageLimit')
-    .optional()
+    .optional({ values: 'falsy' })
     .isInt({ min: 1 })
     .withMessage('Usage limit must be a positive integer'),
 
@@ -55,71 +55,71 @@ export const createDiscountValidation = [
 
   body('endDate').isISO8601().withMessage('Invalid end date format'),
 
-  body('isActive').optional().isBoolean().withMessage('isActive must be a boolean'),
+  body('isActive').optional({ values: 'falsy' }).isBoolean().withMessage('isActive must be a boolean'),
 ];
 
 export const updateDiscountValidation = [
   body('name')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .isLength({ min: 3, max: 200 })
     .withMessage('Name must be between 3 and 200 characters'),
 
   body('description')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .isLength({ max: 500 })
     .withMessage('Description is too long'),
 
-  body('value').optional().isFloat({ min: 0 }).withMessage('Value must be a non-negative number'),
+  body('value').optional({ values: 'falsy' }).isFloat({ min: 0 }).withMessage('Value must be a non-negative number'),
 
   body('minOrderValue')
-    .optional()
+    .optional({ values: 'falsy' })
     .isFloat({ min: 0 })
     .withMessage('Minimum order value must be non-negative'),
 
   body('maxDiscount')
-    .optional()
+    .optional({ values: 'falsy' })
     .isFloat({ min: 0 })
     .withMessage('Maximum discount must be non-negative'),
 
   body('usageLimit')
-    .optional()
+    .optional({ values: 'falsy' })
     .isInt({ min: 1 })
     .withMessage('Usage limit must be a positive integer'),
 
-  body('startDate').optional().isISO8601().withMessage('Invalid start date format'),
+  body('startDate').optional({ values: 'falsy' }).isISO8601().withMessage('Invalid start date format'),
 
-  body('endDate').optional().isISO8601().withMessage('Invalid end date format'),
+  body('endDate').optional({ values: 'falsy' }).isISO8601().withMessage('Invalid end date format'),
 
-  body('isActive').optional().isBoolean().withMessage('isActive must be a boolean'),
+  body('isActive').optional({ values: 'falsy' }).isBoolean().withMessage('isActive must be a boolean'),
 ];
 
 export const discountListValidation = [
-  query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+  query('page').optional({ values: 'falsy' }).isInt({ min: 1 }).withMessage('Page must be a positive integer'),
 
   query('pageSize')
-    .optional()
+    .optional({ values: 'falsy' })
     .isInt({ min: 1, max: 100 })
     .withMessage('Page size must be between 1 and 100'),
 
-  query('search').optional().trim().isLength({ max: 200 }).withMessage('Search is too long'),
+  query('search').optional({ values: 'falsy' }).trim().isLength({ max: 200 }).withMessage('Search is too long'),
 
   query('type')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .isIn(['PERCENTAGE', 'FIXED_AMOUNT', 'FREE_SHIPPING'])
     .withMessage('Invalid discount type'),
 
-  query('isActive').optional().isBoolean().withMessage('isActive must be a boolean'),
+  query('isActive').optional({ values: 'falsy' }).isBoolean().withMessage('isActive must be a boolean'),
 
   query('sortBy')
-    .optional()
+    .optional({ values: 'falsy' })
     .trim()
     .isIn(['code', 'value', 'usageCount', 'createdAt'])
     .withMessage('Invalid sort field'),
 
-  query('sortOrder').optional().trim().isIn(['asc', 'desc']).withMessage('Invalid sort order'),
+  query('sortOrder').optional({ values: 'falsy' }).trim().isIn(['asc', 'desc']).withMessage('Invalid sort order'),
 ];
 
 export const validateDiscountValidation = [
