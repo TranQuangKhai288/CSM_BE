@@ -225,8 +225,18 @@ class ProductsController {
    *               lowStockThreshold:
    *                 type: integer
    *               attributes:
-   *                 type: object
-   *                 description: Dynamic JSONB attributes (e.g., {color, size, brand})
+   *                 type: array
+   *                 description: Dynamic JSONB attributes as array of objects ({ key, label, value })
+   *                 items:
+   *                   type: object
+   *                   properties:
+   *                     key:
+   *                       type: string
+   *                     label:
+   *                       type: string
+   *                     value:
+   *                       nullable: true
+   *                       description: Value can be string, number, boolean, or object
    *               images:
    *                 type: array
    *                 items:
@@ -301,7 +311,18 @@ class ProductsController {
    *               lowStockThreshold:
    *                 type: integer
    *               attributes:
-   *                 type: object
+   *                 type: array
+   *                 description: Dynamic JSONB attributes as array of objects ({ key, label, value })
+   *                 items:
+   *                   type: object
+   *                   properties:
+   *                     key:
+   *                       type: string
+   *                     label:
+   *                       type: string
+   *                     value:
+   *                       nullable: true
+   *                       description: Value can be string, number, boolean, or object
    *               images:
    *                 type: array
    *                 items:

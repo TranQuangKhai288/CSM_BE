@@ -145,7 +145,10 @@ async function main() {
       price: 99.99,
       description: 'Full-featured e-commerce template built with React and Node.js',
       shortDesc: 'Modern e-commerce template',
-      attributes: { tech: 'React, Node.js', license: 'MIT' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'React, Node.js' },
+        { key: 'license', label: 'License', value: 'MIT' },
+      ],
     },
     {
       name: 'Admin Dashboard Template',
@@ -153,7 +156,10 @@ async function main() {
       price: 79.99,
       description: 'Beautiful admin dashboard with charts and analytics',
       shortDesc: 'Professional admin dashboard',
-      attributes: { tech: 'Vue.js, TypeScript', license: 'Commercial' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'Vue.js, TypeScript' },
+        { key: 'license', label: 'License', value: 'Commercial' },
+      ],
     },
     {
       name: 'Landing Page Template Pack',
@@ -161,7 +167,10 @@ async function main() {
       price: 49.99,
       description: '10 responsive landing page templates',
       shortDesc: 'Landing page collection',
-      attributes: { tech: 'HTML5, CSS3, JavaScript', license: 'MIT' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'HTML5, CSS3, JavaScript' },
+        { key: 'license', label: 'License', value: 'MIT' },
+      ],
     },
     {
       name: 'Mobile App Source Code - Social Media',
@@ -169,7 +178,10 @@ async function main() {
       price: 199.99,
       description: 'Complete social media app with real-time chat',
       shortDesc: 'Social media mobile app',
-      attributes: { tech: 'React Native, Firebase', license: 'Commercial' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'React Native, Firebase' },
+        { key: 'license', label: 'License', value: 'Commercial' },
+      ],
     },
     {
       name: 'CRM System Full Source',
@@ -177,7 +189,10 @@ async function main() {
       price: 299.99,
       description: 'Customer relationship management system',
       shortDesc: 'Enterprise CRM solution',
-      attributes: { tech: 'Angular, .NET Core', license: 'Extended' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'Angular, .NET Core' },
+        { key: 'license', label: 'License', value: 'Extended' },
+      ],
     },
     {
       name: 'Blog Platform Source Code',
@@ -185,7 +200,10 @@ async function main() {
       price: 89.99,
       description: 'Modern blogging platform with SEO optimization',
       shortDesc: 'SEO-optimized blog platform',
-      attributes: { tech: 'Next.js, MongoDB', license: 'MIT' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'Next.js, MongoDB' },
+        { key: 'license', label: 'License', value: 'MIT' },
+      ],
     },
     {
       name: 'Restaurant Website Template',
@@ -193,7 +211,10 @@ async function main() {
       price: 59.99,
       description: 'Restaurant website with online ordering',
       shortDesc: 'Restaurant & ordering site',
-      attributes: { tech: 'WordPress, WooCommerce', license: 'GPL' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'WordPress, WooCommerce' },
+        { key: 'license', label: 'License', value: 'GPL' },
+      ],
     },
     {
       name: 'Portfolio Template for Designers',
@@ -201,7 +222,10 @@ async function main() {
       price: 39.99,
       description: 'Creative portfolio template',
       shortDesc: 'Designer portfolio template',
-      attributes: { tech: 'HTML5, CSS3, GSAP', license: 'MIT' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'HTML5, CSS3, GSAP' },
+        { key: 'license', label: 'License', value: 'MIT' },
+      ],
     },
     {
       name: 'Real Estate Listing Platform',
@@ -209,7 +233,10 @@ async function main() {
       price: 249.99,
       description: 'Complete real estate listing website',
       shortDesc: 'Real estate platform',
-      attributes: { tech: 'Laravel, Vue.js', license: 'Commercial' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'Laravel, Vue.js' },
+        { key: 'license', label: 'License', value: 'Commercial' },
+      ],
     },
     {
       name: 'Invoice & Billing System',
@@ -217,7 +244,10 @@ async function main() {
       price: 149.99,
       description: 'Professional invoicing and billing software',
       shortDesc: 'Invoicing system',
-      attributes: { tech: 'React, Express', license: 'Commercial' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'React, Express' },
+        { key: 'license', label: 'License', value: 'Commercial' },
+      ],
     },
     {
       name: 'Education LMS Platform',
@@ -225,7 +255,10 @@ async function main() {
       price: 399.99,
       description: 'Learning management system with video courses',
       shortDesc: 'LMS platform',
-      attributes: { tech: 'Django, PostgreSQL', license: 'Extended' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'Django, PostgreSQL' },
+        { key: 'license', label: 'License', value: 'Extended' },
+      ],
     },
     {
       name: 'Job Board Website',
@@ -233,7 +266,10 @@ async function main() {
       price: 179.99,
       description: 'Job listing and application platform',
       shortDesc: 'Job board platform',
-      attributes: { tech: 'Ruby on Rails', license: 'Commercial' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'Ruby on Rails' },
+        { key: 'license', label: 'License', value: 'Commercial' },
+      ],
     },
     {
       name: 'Booking System Source Code',
@@ -241,7 +277,10 @@ async function main() {
       price: 159.99,
       description: 'Appointment and booking management system',
       shortDesc: 'Booking management',
-      attributes: { tech: 'PHP, MySQL', license: 'Commercial' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'PHP, MySQL' },
+        { key: 'license', label: 'License', value: 'Commercial' },
+      ],
     },
     {
       name: 'Chat Application Source',
@@ -249,7 +288,10 @@ async function main() {
       price: 129.99,
       description: 'Real-time messaging application',
       shortDesc: 'Real-time chat app',
-      attributes: { tech: 'Socket.io, Node.js', license: 'MIT' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'Socket.io, Node.js' },
+        { key: 'license', label: 'License', value: 'MIT' },
+      ],
     },
     {
       name: 'Inventory Management System',
@@ -257,7 +299,10 @@ async function main() {
       price: 189.99,
       description: 'Stock and inventory tracking system',
       shortDesc: 'Inventory tracker',
-      attributes: { tech: 'ASP.NET, SQL Server', license: 'Commercial' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'ASP.NET, SQL Server' },
+        { key: 'license', label: 'License', value: 'Commercial' },
+      ],
     },
     {
       name: 'Event Management Platform',
@@ -265,7 +310,10 @@ async function main() {
       price: 169.99,
       description: 'Event ticketing and management system',
       shortDesc: 'Event platform',
-      attributes: { tech: 'Vue.js, Firebase', license: 'Commercial' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'Vue.js, Firebase' },
+        { key: 'license', label: 'License', value: 'Commercial' },
+      ],
     },
     {
       name: 'Food Delivery App Source',
@@ -273,7 +321,10 @@ async function main() {
       price: 279.99,
       description: 'Complete food delivery mobile app',
       shortDesc: 'Food delivery solution',
-      attributes: { tech: 'Flutter, Node.js', license: 'Extended' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'Flutter, Node.js' },
+        { key: 'license', label: 'License', value: 'Extended' },
+      ],
     },
     {
       name: 'Fitness Tracking App',
@@ -281,7 +332,10 @@ async function main() {
       price: 149.99,
       description: 'Mobile fitness and workout tracker',
       shortDesc: 'Fitness tracker app',
-      attributes: { tech: 'React Native', license: 'Commercial' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'React Native' },
+        { key: 'license', label: 'License', value: 'Commercial' },
+      ],
     },
     {
       name: 'Music Streaming Platform',
@@ -289,7 +343,10 @@ async function main() {
       price: 349.99,
       description: 'Audio streaming platform with playlists',
       shortDesc: 'Music streaming app',
-      attributes: { tech: 'React, AWS', license: 'Extended' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'React, AWS' },
+        { key: 'license', label: 'License', value: 'Extended' },
+      ],
     },
     {
       name: 'Task Management System',
@@ -297,7 +354,10 @@ async function main() {
       price: 99.99,
       description: 'Project and task management tool',
       shortDesc: 'Task manager',
-      attributes: { tech: 'Svelte, Supabase', license: 'MIT' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'Svelte, Supabase' },
+        { key: 'license', label: 'License', value: 'MIT' },
+      ],
     },
     {
       name: 'Weather App Source Code',
@@ -305,7 +365,10 @@ async function main() {
       price: 29.99,
       description: 'Weather forecast mobile application',
       shortDesc: 'Weather app',
-      attributes: { tech: 'Swift, iOS', license: 'MIT' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'Swift, iOS' },
+        { key: 'license', label: 'License', value: 'MIT' },
+      ],
     },
     {
       name: 'Expense Tracker App',
@@ -313,7 +376,10 @@ async function main() {
       price: 69.99,
       description: 'Personal finance and expense tracking',
       shortDesc: 'Expense tracker',
-      attributes: { tech: 'Kotlin, Android', license: 'MIT' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'Kotlin, Android' },
+        { key: 'license', label: 'License', value: 'MIT' },
+      ],
     },
     {
       name: 'Recipe Website Template',
@@ -321,7 +387,10 @@ async function main() {
       price: 49.99,
       description: 'Food recipe sharing platform',
       shortDesc: 'Recipe platform',
-      attributes: { tech: 'Gatsby, GraphQL', license: 'MIT' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'Gatsby, GraphQL' },
+        { key: 'license', label: 'License', value: 'MIT' },
+      ],
     },
     {
       name: 'URL Shortener Service',
@@ -329,7 +398,10 @@ async function main() {
       price: 39.99,
       description: 'Custom URL shortening service',
       shortDesc: 'URL shortener',
-      attributes: { tech: 'Go, Redis', license: 'MIT' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'Go, Redis' },
+        { key: 'license', label: 'License', value: 'MIT' },
+      ],
     },
     {
       name: 'QR Code Generator Platform',
@@ -337,7 +409,10 @@ async function main() {
       price: 79.99,
       description: 'Dynamic QR code generation and tracking',
       shortDesc: 'QR code platform',
-      attributes: { tech: 'Python, FastAPI', license: 'Commercial' },
+      attributes: [
+        { key: 'tech', label: 'Technology', value: 'Python, FastAPI' },
+        { key: 'license', label: 'License', value: 'Commercial' },
+      ],
     },
   ];
 

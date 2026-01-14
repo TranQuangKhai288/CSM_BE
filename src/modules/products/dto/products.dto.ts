@@ -17,7 +17,8 @@ export interface CreateProductDto {
   lowStockThreshold?: number;
 
   // Product attributes (JSONB - dynamic)
-  attributes?: Record<string, any>;
+  // Stored as array of attribute objects: [{ key, label?, value }]
+  attributes?: Attribute[];
 
   // Media
   images?: string[];
@@ -55,7 +56,8 @@ export interface UpdateProductDto {
   lowStockThreshold?: number;
 
   // Product attributes (JSONB)
-  attributes?: Record<string, any>;
+  // Stored as array of attribute objects: [{ key, label?, value }]
+  attributes?: Attribute[];
 
   // Media
   images?: string[];
@@ -88,7 +90,7 @@ export interface ProductResponse {
   stockQuantity: number;
   lowStockThreshold: number | null;
 
-  attributes: Record<string, any> | null;
+  attributes: Attribute[] | null;
 
   images: string[];
   featuredImage: string | null;
@@ -108,6 +110,12 @@ export interface ProductResponse {
 
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface Attribute {
+  key: string;
+  label?: string;
+  value: any;
 }
 
 export interface ProductListQuery {

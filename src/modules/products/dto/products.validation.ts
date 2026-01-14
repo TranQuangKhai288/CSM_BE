@@ -69,8 +69,24 @@ export const createProductValidation = [
     .isInt({ min: 0 })
     .withMessage('Low stock threshold must be a non-negative integer'),
 
-  // Attributes validation (JSONB)
-  body('attributes').optional({ values: 'falsy' }).isObject().withMessage('Attributes must be a valid JSON object'),
+  // Attributes validation (JSONB array of {key, label?, value})
+  body('attributes')
+    .optional({ values: 'falsy' })
+    .isArray()
+    .withMessage('Attributes must be an array')
+    .custom((value) => {
+      if (!Array.isArray(value)) return true; // Already checked by isArray
+      return value.every(
+        (attr) =>
+          typeof attr === 'object' &&
+          attr !== null &&
+          typeof attr.key === 'string' &&
+          attr.key.length > 0 &&
+          (attr.label === undefined || typeof attr.label === 'string') &&
+          attr.value !== undefined
+      );
+    })
+    .withMessage('Each attribute must have {key: string, label?: string, value: any}')
 
   // Media validation
   body('images').optional({ values: 'falsy' }).isArray().withMessage('Images must be an array'),
@@ -163,8 +179,23 @@ export const updateProductValidation = [
 
   body('attributes')
     .optional({ values: 'falsy' })
-    .custom((value) => value === null || typeof value === 'object')
-    .withMessage('Attributes must be a valid JSON object or null'),
+    .custom((value) => {
+      if (value === null || value === undefined) return true;
+      if (!Array.isArray(value)) throw new Error('Attributes must be an array');
+      if (!value.every(
+        (attr) =>
+          typeof attr === 'object' &&
+          attr !== null &&
+          typeof attr.key === 'string' &&
+          attr.key.length > 0 &&
+          (attr.label === undefined || typeof attr.label === 'string') &&
+          attr.value !== undefined
+      )) {
+        throw new Error('Each attribute must have {key: string, label?: string, value: any}');
+      }
+      return true;
+    })
+    .withMessage('Attributes must be array of {key, label?, value} or null')
 
   body('images').optional({ values: 'falsy' }).isArray().withMessage('Images must be an array'),
 
