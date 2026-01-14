@@ -57,7 +57,10 @@ export const createProductValidation = [
     .withMessage('Cost price must be a positive number'),
 
   // Inventory validation
-  body('trackInventory').optional({ values: 'falsy' }).isBoolean().withMessage('trackInventory must be a boolean'),
+  body('trackInventory')
+    .optional({ values: 'falsy' })
+    .isBoolean()
+    .withMessage('trackInventory must be a boolean'),
 
   body('stockQuantity')
     .optional({ values: 'falsy' })
@@ -86,19 +89,31 @@ export const createProductValidation = [
           attr.value !== undefined
       );
     })
-    .withMessage('Each attribute must have {key: string, label?: string, value: any}')
+    .withMessage('Each attribute must have {key: string, label?: string, value: any}'),
 
   // Media validation
   body('images').optional({ values: 'falsy' }).isArray().withMessage('Images must be an array'),
 
-  body('images.*').optional({ values: 'falsy' }).isURL().withMessage('Each image must be a valid URL'),
+  body('images.*')
+    .optional({ values: 'falsy' })
+    .isURL()
+    .withMessage('Each image must be a valid URL'),
 
-  body('featuredImage').optional({ values: 'falsy' }).isURL().withMessage('Featured image must be a valid URL'),
+  body('featuredImage')
+    .optional({ values: 'falsy' })
+    .isURL()
+    .withMessage('Featured image must be a valid URL'),
 
   // Status validation
-  body('isActive').optional({ values: 'falsy' }).isBoolean().withMessage('isActive must be a boolean'),
+  body('isActive')
+    .optional({ values: 'falsy' })
+    .isBoolean()
+    .withMessage('isActive must be a boolean'),
 
-  body('isFeatured').optional({ values: 'falsy' }).isBoolean().withMessage('isFeatured must be a boolean'),
+  body('isFeatured')
+    .optional({ values: 'falsy' })
+    .isBoolean()
+    .withMessage('isFeatured must be a boolean'),
 
   // SEO validation
   body('metaTitle')
@@ -151,9 +166,15 @@ export const updateProductValidation = [
     .isLength({ max: 500 })
     .withMessage('Short description must not exceed 500 characters'),
 
-  body('categoryId').optional({ values: 'falsy' }).matches(REGEX.UUID).withMessage('Invalid category ID format'),
+  body('categoryId')
+    .optional({ values: 'falsy' })
+    .matches(REGEX.UUID)
+    .withMessage('Invalid category ID format'),
 
-  body('price').optional({ values: 'falsy' }).isFloat({ min: 0 }).withMessage('Price must be a positive number'),
+  body('price')
+    .optional({ values: 'falsy' })
+    .isFloat({ min: 0 })
+    .withMessage('Price must be a positive number'),
 
   body('compareAtPrice')
     .optional({ values: 'falsy' })
@@ -165,7 +186,10 @@ export const updateProductValidation = [
     .custom((value) => value === null || (typeof value === 'number' && value >= 0))
     .withMessage('Cost price must be a positive number or null'),
 
-  body('trackInventory').optional({ values: 'falsy' }).isBoolean().withMessage('trackInventory must be a boolean'),
+  body('trackInventory')
+    .optional({ values: 'falsy' })
+    .isBoolean()
+    .withMessage('trackInventory must be a boolean'),
 
   body('stockQuantity')
     .optional({ values: 'falsy' })
@@ -182,33 +206,44 @@ export const updateProductValidation = [
     .custom((value) => {
       if (value === null || value === undefined) return true;
       if (!Array.isArray(value)) throw new Error('Attributes must be an array');
-      if (!value.every(
-        (attr) =>
-          typeof attr === 'object' &&
-          attr !== null &&
-          typeof attr.key === 'string' &&
-          attr.key.length > 0 &&
-          (attr.label === undefined || typeof attr.label === 'string') &&
-          attr.value !== undefined
-      )) {
+      if (
+        !value.every(
+          (attr) =>
+            typeof attr === 'object' &&
+            attr !== null &&
+            typeof attr.key === 'string' &&
+            attr.key.length > 0 &&
+            (attr.label === undefined || typeof attr.label === 'string') &&
+            attr.value !== undefined
+        )
+      ) {
         throw new Error('Each attribute must have {key: string, label?: string, value: any}');
       }
       return true;
     })
-    .withMessage('Attributes must be array of {key, label?, value} or null')
+    .withMessage('Attributes must be array of {key, label?, value} or null'),
 
   body('images').optional({ values: 'falsy' }).isArray().withMessage('Images must be an array'),
 
-  body('images.*').optional({ values: 'falsy' }).isURL().withMessage('Each image must be a valid URL'),
+  body('images.*')
+    .optional({ values: 'falsy' })
+    .isURL()
+    .withMessage('Each image must be a valid URL'),
 
   body('featuredImage')
     .optional({ values: 'falsy' })
     .custom((value) => value === null || /^https?:\/\/.+/.test(value))
     .withMessage('Featured image must be a valid URL or null'),
 
-  body('isActive').optional({ values: 'falsy' }).isBoolean().withMessage('isActive must be a boolean'),
+  body('isActive')
+    .optional({ values: 'falsy' })
+    .isBoolean()
+    .withMessage('isActive must be a boolean'),
 
-  body('isFeatured').optional({ values: 'falsy' }).isBoolean().withMessage('isFeatured must be a boolean'),
+  body('isFeatured')
+    .optional({ values: 'falsy' })
+    .isBoolean()
+    .withMessage('isFeatured must be a boolean'),
 
   body('metaTitle')
     .optional({ values: 'falsy' })
@@ -230,7 +265,10 @@ export const updateProductValidation = [
 ];
 
 export const productListValidation = [
-  query('page').optional({ values: 'falsy' }).isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+  query('page')
+    .optional({ values: 'falsy' })
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer'),
 
   query('pageSize')
     .optional({ values: 'falsy' })
@@ -243,11 +281,20 @@ export const productListValidation = [
     .isLength({ min: 1, max: 100 })
     .withMessage('Search term must be between 1 and 100 characters'),
 
-  query('categoryId').optional({ values: 'falsy' }).matches(REGEX.UUID).withMessage('Invalid category ID format'),
+  query('categoryId')
+    .optional({ values: 'falsy' })
+    .matches(REGEX.UUID)
+    .withMessage('Invalid category ID format'),
 
-  query('isActive').optional({ values: 'falsy' }).isBoolean().withMessage('isActive must be a boolean'),
+  query('isActive')
+    .optional({ values: 'falsy' })
+    .isBoolean()
+    .withMessage('isActive must be a boolean'),
 
-  query('isFeatured').optional({ values: 'falsy' }).isBoolean().withMessage('isFeatured must be a boolean'),
+  query('isFeatured')
+    .optional({ values: 'falsy' })
+    .isBoolean()
+    .withMessage('isFeatured must be a boolean'),
 
   query('minPrice')
     .optional({ values: 'falsy' })
@@ -259,7 +306,10 @@ export const productListValidation = [
     .isFloat({ min: 0 })
     .withMessage('Max price must be a positive number'),
 
-  query('inStock').optional({ values: 'falsy' }).isBoolean().withMessage('inStock must be a boolean'),
+  query('inStock')
+    .optional({ values: 'falsy' })
+    .isBoolean()
+    .withMessage('inStock must be a boolean'),
 
   query('status')
     .optional({ values: 'falsy' })
