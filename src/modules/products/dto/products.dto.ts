@@ -7,9 +7,9 @@ export interface CreateProductDto {
   categoryId: string;
 
   // Pricing
-  price: number;
-  compareAtPrice?: number;
+  basePrice: number;
   costPrice?: number;
+  salePrice?: number;
 
   // Inventory
   trackInventory?: boolean;
@@ -46,8 +46,8 @@ export interface UpdateProductDto {
   categoryId?: string;
 
   // Pricing
-  price?: number;
-  compareAtPrice?: number;
+  basePrice?: number;
+  salePrice?: number;
   costPrice?: number;
 
   // Inventory
@@ -82,8 +82,8 @@ export interface ProductResponse {
   shortDescription: string | null;
   categoryId: string;
 
-  price: number;
-  compareAtPrice: number | null;
+  basePrice: number;
+  salePrice: number | null;
   costPrice: number | null;
 
   trackInventory: boolean;

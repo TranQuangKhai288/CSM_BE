@@ -33,7 +33,7 @@ class RedisService {
 
     const maxRetries = 3;
     const retryDelay = 1000; // 1 second
-    const connectTimeout = 3000; // ms
+    const connectTimeout = 1000; // ms
 
     console.log('🔄 Attempting to connect to Redis...');
 

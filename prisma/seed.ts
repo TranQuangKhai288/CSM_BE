@@ -4,1151 +4,462 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const databaseUrl = process.env.DATABASE_URL;
-const directUrl = process.env.DIRECT_URL;
+const prisma = new PrismaClient();
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: directUrl || databaseUrl,
-    },
-  },
-});
+// --- CẤU HÌNH CONFIG ---
+const CONFIG = {
+  productsPerCategory: { min: 30, max: 40 }, // Số lượng ngẫu nhiên từ 30 -> 40
+};
+
+// --- CÁC HÀM HỖ TRỢ (UTILS) ---
+
+// Random số nguyên trong khoảng
+const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+// Random phần tử trong mảng
+const randomItem = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+
+// Tạo Slug từ tên
+const generateSlug = (name: string) => {
+  return (
+    name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Bỏ dấu tiếng Việt
+      .replace(/[^a-z0-9]/g, '-') // Thay ký tự đặc biệt bằng gạch ngang
+      .replace(/-+/g, '-') // Xóa gạch ngang kép
+      .replace(/^-|-$/g, '') +
+    '-' +
+    randomInt(1000, 9999)
+  ); // Thêm số đuôi để tránh trùng tuyệt đối
+};
+
+// Tính toán giá bán (Base), giá vốn (Cost) và giá khuyến mãi (Sale)
+function calculatePricing(
+  basePrice: number,
+  categoryType: 'DIGITAL' | 'ELECTRONICS' | 'FASHION' | 'BOOKS'
+) {
+  // Biên độ lợi nhuận và khả năng Sale tùy theo ngành hàng
+  let costRatio = 0.5; // Mặc định vốn 50%
+  let saleChance = 0.5; // Mặc định 50% cơ hội sale
+  let maxDiscount = 0.2; // Mặc định giảm tối đa 20%
+
+  switch (categoryType) {
+    case 'DIGITAL':
+      costRatio = 0.15; // Sản phẩm số vốn cực thấp (công sức dev)
+      saleChance = 0.8; // Thường xuyên giảm giá để kích cầu
+      maxDiscount = 0.4; // Có thể giảm sâu tới 40%
+      break;
+    case 'ELECTRONICS':
+      costRatio = 0.85; // Đồ điện tử lãi mỏng (vốn chiếm 85%)
+      saleChance = 0.3; // Ít giảm giá sâu
+      maxDiscount = 0.1; // Chỉ giảm tối đa 10%
+      break;
+    case 'FASHION':
+      costRatio = 0.35; // Thời trang lãi cao (vốn 35%)
+      saleChance = 0.6; // Hay sale xả kho
+      maxDiscount = 0.5; // Sale shock 50%
+      break;
+    case 'BOOKS':
+      costRatio = 0.6;
+      saleChance = 0.4;
+      maxDiscount = 0.25;
+      break;
+  }
+
+  // Làm tròn tiền về đơn vị nghìn (VD: 153.200 -> 154.000)
+  const round = (num: number) => Math.ceil(num / 1000) * 1000;
+
+  const costPrice = round(basePrice * costRatio);
+
+  // Logic Sale: Random xem có sale không, và sale bao nhiêu %
+  const hasSale = Math.random() < saleChance;
+  let salePrice: number | null = null;
+
+  if (hasSale) {
+    const discountPercent = Math.random() * maxDiscount; // Random từ 0 -> maxDiscount
+    salePrice = round(basePrice * (1 - discountPercent));
+    // Đảm bảo giá sale không thấp hơn giá vốn + 5% lợi nhuận tối thiểu
+    if (salePrice < costPrice * 1.05) {
+      salePrice = round(costPrice * 1.05);
+    }
+  }
+
+  return { basePrice, costPrice, salePrice };
+}
+
+// --- GENERATORS CHO TỪNG DANH MỤC ---
+
+// 1. DIGITAL PRODUCTS GENERATOR
+function generateDigitalProduct(index: number) {
+  const techs = [
+    'React',
+    'Next.js',
+    'Vue.js',
+    'Node.js',
+    'Flutter',
+    'React Native',
+    'Laravel',
+    'PHP',
+    'Python',
+    'Go',
+  ];
+  const types = [
+    'Template',
+    'Source Code',
+    'UI Kit',
+    'Plugin',
+    'Dashboard',
+    'Landing Page',
+    'SaaS Starter',
+  ];
+  const adjs = ['Pro', 'Ultimate', 'Premium', 'Modern', 'Clean', 'Fast', 'Secure', 'Dark Mode'];
+
+  const tech = randomItem(techs);
+  const type = randomItem(types);
+  const adj = randomItem(adjs);
+
+  const name = `${adj} ${tech} ${type} ${index}`; // Thêm index để đảm bảo tên khác nhau
+  const basePrice = randomInt(500, 5000) * 1000; // 500k -> 5tr
+
+  return {
+    name,
+    basePrice,
+    type: 'DIGITAL' as const,
+    attributes: [
+      { key: 'tech_stack', label: 'Công nghệ', value: tech },
+      { key: 'version', label: 'Phiên bản', value: `v${randomInt(1, 3)}.${randomInt(0, 9)}` },
+      { key: 'license', label: 'Giấy phép', value: Math.random() > 0.7 ? 'Thương mại' : 'Cá nhân' },
+      { key: 'support', label: 'Hỗ trợ', value: `${randomInt(3, 12)} tháng` },
+      { key: 'file_type', label: 'Định dạng file', value: 'ZIP, Documentation' },
+    ],
+  };
+}
+
+// 2. ELECTRONICS GENERATOR (Tập trung PC/Xeon của Kai)
+function generateElectronicsProduct(index: number) {
+  const subCats = ['CPU', 'VGA', 'Mainboard', 'RAM', 'Laptop', 'Phone', 'Monitor'];
+  const subCat = randomItem(subCats);
+
+  let name = '';
+  let basePrice = 0;
+  let attributes: any[] = [];
+
+  // Logic tạo tên và thuộc tính chi tiết theo từng loại linh kiện
+  switch (subCat) {
+    case 'CPU':
+      const cpuBrands = [
+        'Intel Core i3',
+        'Intel Core i5',
+        'Intel Core i7',
+        'Intel Core i9',
+        'Intel Xeon E5',
+        'AMD Ryzen 5',
+        'AMD Ryzen 7',
+      ];
+      const brand = randomItem(cpuBrands);
+      const suffix = brand.includes('Xeon')
+        ? `${randomInt(2650, 2699)} v${randomInt(3, 4)}`
+        : `${randomInt(12, 14)}${randomInt(100, 900)}K`;
+      name = `${brand} ${suffix}`;
+      basePrice = brand.includes('Xeon')
+        ? randomInt(500, 3000) * 1000
+        : randomInt(3000, 15000) * 1000;
+      attributes = [
+        {
+          key: 'socket',
+          label: 'Socket',
+          value: brand.includes('Xeon') ? 'LGA 2011-3' : 'LGA 1700',
+        },
+        {
+          key: 'cores',
+          label: 'Số nhân',
+          value: brand.includes('Xeon') ? randomInt(12, 24) : randomInt(6, 16),
+        },
+        {
+          key: 'threads',
+          label: 'Số luồng',
+          value: brand.includes('Xeon') ? randomInt(24, 48) : randomInt(12, 32),
+        },
+        { key: 'tdp', label: 'TDP', value: `${randomInt(65, 150)}W` },
+      ];
+      break;
+
+    case 'Mainboard':
+      const mbBrands = ['Asus', 'Gigabyte', 'MSI', 'Huananzhi', 'ASRock'];
+      const mbBrand = randomItem(mbBrands);
+      const chipset = mbBrand === 'Huananzhi' ? 'X99' : randomItem(['Z790', 'B760', 'Z690']);
+      const mbName =
+        mbBrand === 'Huananzhi'
+          ? `${randomItem(['TF', 'F8', 'T8', 'QD4'])} Gaming`
+          : `${randomItem(['Rog Strix', 'Aorus', 'TUF', 'Pro'])}`;
+      name = `Mainboard ${mbBrand} ${chipset} ${mbName}`;
+      basePrice = randomInt(1500, 10000) * 1000;
+      attributes = [
+        { key: 'chipset', label: 'Chipset', value: chipset },
+        { key: 'socket', label: 'Socket', value: chipset === 'X99' ? 'LGA 2011-3' : 'LGA 1700' },
+        { key: 'ram_type', label: 'Loại RAM', value: chipset === 'X99' ? 'DDR3/DDR4 ECC' : 'DDR5' },
+        { key: 'size', label: 'Kích thước', value: 'ATX' },
+      ];
+      break;
+
+    case 'VGA':
+      const vgaChips = ['RTX 3060', 'RTX 4060', 'RTX 4070 Ti', 'RTX 4090', 'RX 6600', 'RX 7800 XT'];
+      const vgaMakers = ['MSI', 'Asus', 'Gigabyte', 'Colorful', 'Zotac'];
+      const vgaChip = randomItem(vgaChips);
+      name = `VGA ${randomItem(vgaMakers)} ${vgaChip} ${randomItem(['Gaming X', 'OC', 'Eagle', 'TUF'])}`;
+      basePrice = randomInt(5000, 50000) * 1000;
+      attributes = [
+        { key: 'vram', label: 'VRAM', value: `${randomItem([8, 12, 16, 24])}GB` },
+        { key: 'chipset', label: 'Chip đồ họa', value: vgaChip.includes('RTX') ? 'NVIDIA' : 'AMD' },
+        { key: 'fans', label: 'Số quạt', value: randomItem([2, 3]) },
+      ];
+      break;
+
+    default: // Laptop, Phone, Monitor (Sinh ngẫu nhiên đơn giản hơn)
+      const devices = [
+        'iPhone 15',
+        'Samsung S24',
+        'MacBook Pro',
+        'Dell XPS',
+        'LG Gram',
+        'Sony Bravia',
+      ];
+      name = `${randomItem(devices)} ${randomItem(['Pro', 'Max', 'Ultra', 'Plus'])} ${randomInt(2024, 2025)}`;
+      basePrice = randomInt(10000, 80000) * 1000;
+      attributes = [
+        { key: 'brand', label: 'Thương hiệu', value: 'Chính hãng' },
+        { key: 'warranty', label: 'Bảo hành', value: '12 Tháng' },
+        { key: 'condition', label: 'Tình trạng', value: 'Mới 100%' },
+      ];
+  }
+
+  return { name, basePrice, type: 'ELECTRONICS' as const, attributes };
+}
+
+// 3. FASHION GENERATOR
+function generateFashionProduct(index: number) {
+  const items = ['Áo Thun', 'Áo Polo', 'Áo Khoác', 'Quần Jeans', 'Quần Kaki', 'Váy', 'Đầm'];
+  const materials = ['Cotton', 'Linen', 'Denim', 'Kaki', 'Lụa', 'Nỉ'];
+  const styles = ['Slim Fit', 'Regular', 'Oversize', 'Streetwear', 'Vintage', 'Basic'];
+
+  const item = randomItem(items);
+  const material = randomItem(materials);
+  const style = randomItem(styles);
+
+  const name = `${item} ${material} ${style} ${randomInt(100, 999)}`;
+  const basePrice = randomInt(150, 1500) * 1000;
+
+  return {
+    name,
+    basePrice,
+    type: 'FASHION' as const,
+    attributes: [
+      { key: 'material', label: 'Chất liệu', value: material },
+      { key: 'style', label: 'Phong cách', value: style },
+      { key: 'gender', label: 'Giới tính', value: randomItem(['Nam', 'Nữ', 'Unisex']) },
+      { key: 'origin', label: 'Xuất xứ', value: 'Việt Nam' },
+      { key: 'season', label: 'Mùa', value: randomItem(['Xuân Hè', 'Thu Đông', 'Bốn mùa']) },
+    ],
+  };
+}
+
+// 4. BOOKS GENERATOR
+function generateBookProduct(index: number) {
+  const topics = [
+    'JavaScript',
+    'Python',
+    'AI/Machine Learning',
+    'DevOps',
+    'Kinh Tế',
+    'Tâm Lý Học',
+    'Tiểu Thuyết',
+  ];
+  const prefixes = ['Giáo trình', 'Cẩm nang', 'Tự học', 'Làm chủ', 'Nghệ thuật', 'Tuyệt kỹ'];
+
+  const topic = randomItem(topics);
+  const name = `${randomItem(prefixes)} ${topic} ${randomItem(['Cơ bản', 'Nâng cao', 'Toàn tập', 'Cho người mới'])}`;
+  const basePrice = randomInt(80, 500) * 1000;
+
+  return {
+    name,
+    basePrice,
+    type: 'BOOKS' as const,
+    attributes: [
+      { key: 'author', label: 'Tác giả', value: `Tác giả ${randomInt(1, 50)}` },
+      { key: 'pages', label: 'Số trang', value: randomInt(200, 1200) },
+      {
+        key: 'publisher',
+        label: 'Nhà xuất bản',
+        value: randomItem(['NXB Trẻ', 'NXB Kim Đồng', 'NXB Thế Giới', "O'Reilly"]),
+      },
+      {
+        key: 'language',
+        label: 'Ngôn ngữ',
+        value: Math.random() > 0.3 ? 'Tiếng Việt' : 'Tiếng Anh',
+      },
+      { key: 'year', label: 'Năm xuất bản', value: randomInt(2018, 2024) },
+    ],
+  };
+}
+
+// --- MAIN FUNCTION ---
 
 async function main() {
-  console.log('🌱 Starting seed...');
+  console.log('🏭 BẮT ĐẦU QUY TRÌNH SEED DỮ LIỆU NÂNG CAO...');
 
-  // Create default roles
+  // 1. TẠO USER & ROLE (Cơ bản)
   const adminRole = await prisma.role.upsert({
     where: { slug: 'admin' },
     update: {},
     create: {
-      name: 'Administrator',
+      name: 'Quản trị viên',
       slug: 'admin',
-      description: 'Full system access',
       permissions: JSON.parse(JSON.stringify(['*'])),
       isActive: true,
     },
   });
-
-  const managerRole = await prisma.role.upsert({
-    where: { slug: 'manager' },
-    update: {},
-    create: {
-      name: 'Manager',
-      slug: 'manager',
-      description: 'Manage products, orders, and customers',
-      permissions: JSON.parse(
-        JSON.stringify(['products.*', 'orders.*', 'customers.*', 'inventory.*', 'categories.*'])
-      ),
-      isActive: true,
-    },
-  });
-
   const staffRole = await prisma.role.upsert({
     where: { slug: 'staff' },
     update: {},
     create: {
-      name: 'Staff',
+      name: 'Nhân viên',
       slug: 'staff',
-      description: 'View and process orders',
-      permissions: JSON.parse(JSON.stringify(['orders.read', 'orders.update', 'customers.read'])),
+      permissions: JSON.parse(JSON.stringify(['orders.*'])),
       isActive: true,
     },
   });
 
-  console.log('✅ Roles created');
-  console.log('- Admin role:', adminRole.id);
-  console.log('- Manager role:', managerRole.id);
-  console.log('- Staff role:', staffRole.id);
-
-  // Create default admin user
   const hashedPassword = await bcrypt.hash('Admin@123', 10);
-
-  const adminUser = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { email: 'admin@example.com' },
     update: {},
     create: {
       email: 'admin@example.com',
       password: hashedPassword,
-      firstName: 'Admin',
-      lastName: 'User',
+      firstName: 'Quản trị',
+      lastName: 'Viên',
       roleId: adminRole.id,
       isActive: true,
     },
   });
+  console.log('✅ Đã khởi tạo User & Role');
 
-  console.log('✅ Admin user created:', adminUser.email);
-
-  // Create sample categories
-  const digitalProducts = await prisma.category.upsert({
-    where: { slug: 'digital-products' },
-    update: {},
-    create: {
-      name: 'Digital Products',
-      slug: 'digital-products',
-      description: 'Source code, websites, templates and digital assets',
-      order: 1,
-      isActive: true,
-    },
-  });
-
-  const electronics = await prisma.category.upsert({
-    where: { slug: 'electronics' },
-    update: {},
-    create: {
-      name: 'Electronics',
-      slug: 'electronics',
-      description: 'Electronic devices and gadgets',
-      order: 2,
-      isActive: true,
-    },
-  });
-
-  const fashion = await prisma.category.upsert({
-    where: { slug: 'fashion' },
-    update: {},
-    create: {
-      name: 'Fashion',
-      slug: 'fashion',
-      description: 'Clothing and accessories',
-      order: 3,
-      isActive: true,
-    },
-  });
-
-  const booksEducation = await prisma.category.upsert({
-    where: { slug: 'books-education' },
-    update: {},
-    create: {
-      name: 'Books & Education',
-      slug: 'books-education',
-      description: 'Books, courses and educational materials',
-      order: 4,
-      isActive: true,
-    },
-  });
-
-  console.log('✅ Categories created');
-  console.log('- Digital Products:', digitalProducts.id);
-  console.log('- Electronics:', electronics.id);
-  console.log('- Fashion:', fashion.id);
-  console.log('- Books & Education:', booksEducation.id);
-
-  // ==================== DIGITAL PRODUCTS SHOP ====================
-  console.log('🏪 Creating Digital Products...');
-
-  const digitalProductsData = [
+  // 2. TẠO CATEGORIES
+  const categoryConfigs = [
     {
-      name: 'E-commerce Website Template',
-      sku: 'DG-EC-001',
-      price: 99.99,
-      description: 'Full-featured e-commerce template built with React and Node.js',
-      shortDesc: 'Modern e-commerce template',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'React, Node.js' },
-        { key: 'license', label: 'License', value: 'MIT' },
-      ],
+      name: 'Sản phẩm số',
+      slug: 'san-pham-so',
+      type: 'DIGITAL',
+      generator: generateDigitalProduct,
     },
     {
-      name: 'Admin Dashboard Template',
-      sku: 'DG-AD-002',
-      price: 79.99,
-      description: 'Beautiful admin dashboard with charts and analytics',
-      shortDesc: 'Professional admin dashboard',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'Vue.js, TypeScript' },
-        { key: 'license', label: 'License', value: 'Commercial' },
-      ],
+      name: 'Điện tử & PC',
+      slug: 'dien-tu',
+      type: 'ELECTRONICS',
+      generator: generateElectronicsProduct,
     },
-    {
-      name: 'Landing Page Template Pack',
-      sku: 'DG-LP-003',
-      price: 49.99,
-      description: '10 responsive landing page templates',
-      shortDesc: 'Landing page collection',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'HTML5, CSS3, JavaScript' },
-        { key: 'license', label: 'License', value: 'MIT' },
-      ],
-    },
-    {
-      name: 'Mobile App Source Code - Social Media',
-      sku: 'DG-MA-004',
-      price: 199.99,
-      description: 'Complete social media app with real-time chat',
-      shortDesc: 'Social media mobile app',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'React Native, Firebase' },
-        { key: 'license', label: 'License', value: 'Commercial' },
-      ],
-    },
-    {
-      name: 'CRM System Full Source',
-      sku: 'DG-CR-005',
-      price: 299.99,
-      description: 'Customer relationship management system',
-      shortDesc: 'Enterprise CRM solution',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'Angular, .NET Core' },
-        { key: 'license', label: 'License', value: 'Extended' },
-      ],
-    },
-    {
-      name: 'Blog Platform Source Code',
-      sku: 'DG-BP-006',
-      price: 89.99,
-      description: 'Modern blogging platform with SEO optimization',
-      shortDesc: 'SEO-optimized blog platform',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'Next.js, MongoDB' },
-        { key: 'license', label: 'License', value: 'MIT' },
-      ],
-    },
-    {
-      name: 'Restaurant Website Template',
-      sku: 'DG-RW-007',
-      price: 59.99,
-      description: 'Restaurant website with online ordering',
-      shortDesc: 'Restaurant & ordering site',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'WordPress, WooCommerce' },
-        { key: 'license', label: 'License', value: 'GPL' },
-      ],
-    },
-    {
-      name: 'Portfolio Template for Designers',
-      sku: 'DG-PT-008',
-      price: 39.99,
-      description: 'Creative portfolio template',
-      shortDesc: 'Designer portfolio template',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'HTML5, CSS3, GSAP' },
-        { key: 'license', label: 'License', value: 'MIT' },
-      ],
-    },
-    {
-      name: 'Real Estate Listing Platform',
-      sku: 'DG-RE-009',
-      price: 249.99,
-      description: 'Complete real estate listing website',
-      shortDesc: 'Real estate platform',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'Laravel, Vue.js' },
-        { key: 'license', label: 'License', value: 'Commercial' },
-      ],
-    },
-    {
-      name: 'Invoice & Billing System',
-      sku: 'DG-IB-010',
-      price: 149.99,
-      description: 'Professional invoicing and billing software',
-      shortDesc: 'Invoicing system',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'React, Express' },
-        { key: 'license', label: 'License', value: 'Commercial' },
-      ],
-    },
-    {
-      name: 'Education LMS Platform',
-      sku: 'DG-LM-011',
-      price: 399.99,
-      description: 'Learning management system with video courses',
-      shortDesc: 'LMS platform',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'Django, PostgreSQL' },
-        { key: 'license', label: 'License', value: 'Extended' },
-      ],
-    },
-    {
-      name: 'Job Board Website',
-      sku: 'DG-JB-012',
-      price: 179.99,
-      description: 'Job listing and application platform',
-      shortDesc: 'Job board platform',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'Ruby on Rails' },
-        { key: 'license', label: 'License', value: 'Commercial' },
-      ],
-    },
-    {
-      name: 'Booking System Source Code',
-      sku: 'DG-BS-013',
-      price: 159.99,
-      description: 'Appointment and booking management system',
-      shortDesc: 'Booking management',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'PHP, MySQL' },
-        { key: 'license', label: 'License', value: 'Commercial' },
-      ],
-    },
-    {
-      name: 'Chat Application Source',
-      sku: 'DG-CA-014',
-      price: 129.99,
-      description: 'Real-time messaging application',
-      shortDesc: 'Real-time chat app',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'Socket.io, Node.js' },
-        { key: 'license', label: 'License', value: 'MIT' },
-      ],
-    },
-    {
-      name: 'Inventory Management System',
-      sku: 'DG-IM-015',
-      price: 189.99,
-      description: 'Stock and inventory tracking system',
-      shortDesc: 'Inventory tracker',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'ASP.NET, SQL Server' },
-        { key: 'license', label: 'License', value: 'Commercial' },
-      ],
-    },
-    {
-      name: 'Event Management Platform',
-      sku: 'DG-EM-016',
-      price: 169.99,
-      description: 'Event ticketing and management system',
-      shortDesc: 'Event platform',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'Vue.js, Firebase' },
-        { key: 'license', label: 'License', value: 'Commercial' },
-      ],
-    },
-    {
-      name: 'Food Delivery App Source',
-      sku: 'DG-FD-017',
-      price: 279.99,
-      description: 'Complete food delivery mobile app',
-      shortDesc: 'Food delivery solution',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'Flutter, Node.js' },
-        { key: 'license', label: 'License', value: 'Extended' },
-      ],
-    },
-    {
-      name: 'Fitness Tracking App',
-      sku: 'DG-FT-018',
-      price: 149.99,
-      description: 'Mobile fitness and workout tracker',
-      shortDesc: 'Fitness tracker app',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'React Native' },
-        { key: 'license', label: 'License', value: 'Commercial' },
-      ],
-    },
-    {
-      name: 'Music Streaming Platform',
-      sku: 'DG-MS-019',
-      price: 349.99,
-      description: 'Audio streaming platform with playlists',
-      shortDesc: 'Music streaming app',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'React, AWS' },
-        { key: 'license', label: 'License', value: 'Extended' },
-      ],
-    },
-    {
-      name: 'Task Management System',
-      sku: 'DG-TM-020',
-      price: 99.99,
-      description: 'Project and task management tool',
-      shortDesc: 'Task manager',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'Svelte, Supabase' },
-        { key: 'license', label: 'License', value: 'MIT' },
-      ],
-    },
-    {
-      name: 'Weather App Source Code',
-      sku: 'DG-WA-021',
-      price: 29.99,
-      description: 'Weather forecast mobile application',
-      shortDesc: 'Weather app',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'Swift, iOS' },
-        { key: 'license', label: 'License', value: 'MIT' },
-      ],
-    },
-    {
-      name: 'Expense Tracker App',
-      sku: 'DG-ET-022',
-      price: 69.99,
-      description: 'Personal finance and expense tracking',
-      shortDesc: 'Expense tracker',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'Kotlin, Android' },
-        { key: 'license', label: 'License', value: 'MIT' },
-      ],
-    },
-    {
-      name: 'Recipe Website Template',
-      sku: 'DG-RC-023',
-      price: 49.99,
-      description: 'Food recipe sharing platform',
-      shortDesc: 'Recipe platform',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'Gatsby, GraphQL' },
-        { key: 'license', label: 'License', value: 'MIT' },
-      ],
-    },
-    {
-      name: 'URL Shortener Service',
-      sku: 'DG-US-024',
-      price: 39.99,
-      description: 'Custom URL shortening service',
-      shortDesc: 'URL shortener',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'Go, Redis' },
-        { key: 'license', label: 'License', value: 'MIT' },
-      ],
-    },
-    {
-      name: 'QR Code Generator Platform',
-      sku: 'DG-QR-025',
-      price: 79.99,
-      description: 'Dynamic QR code generation and tracking',
-      shortDesc: 'QR code platform',
-      attributes: [
-        { key: 'tech', label: 'Technology', value: 'Python, FastAPI' },
-        { key: 'license', label: 'License', value: 'Commercial' },
-      ],
-    },
+    { name: 'Thời trang', slug: 'thoi-trang', type: 'FASHION', generator: generateFashionProduct },
+    { name: 'Sách & Khóa học', slug: 'sach', type: 'BOOKS', generator: generateBookProduct },
   ];
 
-  for (const prod of digitalProductsData) {
-    await prisma.product.create({
-      data: {
-        name: prod.name,
-        slug: prod.sku.toLowerCase(),
-        sku: prod.sku,
-        description: prod.description,
-        shortDesc: prod.shortDesc,
-        categoryId: digitalProducts.id,
-        basePrice: prod.price,
-        stock: 9999, // Digital products have unlimited stock
+  for (const [index, catConfig] of categoryConfigs.entries()) {
+    // Tạo category trong DB
+    const category = await prisma.category.upsert({
+      where: { slug: catConfig.slug },
+      update: {},
+      create: { name: catConfig.name, slug: catConfig.slug, order: index + 1 },
+    });
+
+    console.log(`📦 Đang generate sản phẩm cho danh mục: ${catConfig.name}...`);
+
+    const productCount = randomInt(CONFIG.productsPerCategory.min, CONFIG.productsPerCategory.max);
+
+    // !!! FIX TẠI ĐÂY: Thêm : any[] để tránh lỗi Type 'never'
+    const productsData: any[] = [];
+
+    for (let i = 0; i < productCount; i++) {
+      // 1. Generate dữ liệu thô từ hàm factory
+      const rawData = catConfig.generator(i);
+
+      // 2. Tính toán giá chi tiết
+      const pricing = calculatePricing(rawData.basePrice, catConfig.type as any);
+
+      // 3. Tạo các trường bổ sung (SKU, Slug, Meta)
+      const sku = `${catConfig.type.substring(0, 2)}-${randomInt(10000, 99999)}-${i}`; // VD: DI-48291-1
+      const slug = generateSlug(rawData.name);
+
+      // 4. Push vào mảng chờ insert
+      productsData.push({
+        name: rawData.name,
+        slug: slug,
+        sku: sku,
+        description: `<p>Mô tả chi tiết cho sản phẩm <strong>${rawData.name}</strong>.</p>
+                      <p>Sản phẩm này thuộc dòng ${catConfig.name} chất lượng cao, được tuyển chọn kỹ lưỡng.</p>
+                      <ul>
+                        ${rawData.attributes.map((attr: any) => `<li>${attr.label}: ${attr.value}</li>`).join('')}
+                      </ul>
+                      <p>Cam kết bảo hành chính hãng và hỗ trợ kỹ thuật trọn đời.</p>`,
+        shortDesc: `Sản phẩm ${rawData.name} chính hãng giá tốt nhất thị trường.`,
+        categoryId: category.id,
+        basePrice: pricing.basePrice,
+        salePrice: pricing.salePrice,
+        costPrice: pricing.costPrice,
+        stock: randomInt(0, 200), // Random tồn kho
+        lowStock: 10,
         status: 'PUBLISHED',
         isActive: true,
-        isFeatured: Math.random() > 0.7,
-        attributes: prod.attributes,
-      },
-    });
+        isFeatured: Math.random() > 0.85, // 15% xác suất là sản phẩm nổi bật
+        attributes: JSON.parse(JSON.stringify(rawData.attributes)), // Lưu JSON
+        // SEO Fields
+        metaTitle: `${rawData.name} - Giá Rẻ Chính Hãng | Kai Store`,
+        metaDesc: `Mua ngay ${rawData.name} với giá ưu đãi ${pricing.salePrice || pricing.basePrice}. Giao hàng toàn quốc.`,
+        metaKeywords: rawData.attributes.map((a: any) => a.value).join(', '),
+      });
+    }
+
+    // Insert từng sản phẩm
+    for (const prod of productsData) {
+      const exists = await prisma.product.findFirst({
+        where: { OR: [{ sku: prod.sku }, { slug: prod.slug }] },
+      });
+
+      if (!exists) {
+        await prisma.product.create({ data: prod });
+      }
+    }
+
+    console.log(`   -> Đã tạo ${productsData.length} sản phẩm cho ${catConfig.name}`);
   }
 
-  console.log('✅ Digital Products created (25 products)');
-
-  // ==================== ELECTRONICS SHOP ====================
-  console.log('🏪 Creating Electronics Products...');
-
-  const electronicsData = [
-    {
-      name: 'iPhone 15 Pro Max',
-      sku: 'EL-IP-001',
-      price: 1199.99,
-      description: 'Latest iPhone with A17 Pro chip',
-      shortDesc: 'Premium smartphone',
-      attributes: { brand: 'Apple', storage: '256GB', color: 'Titanium' },
-    },
-    {
-      name: 'Samsung Galaxy S24 Ultra',
-      sku: 'EL-SG-002',
-      price: 1099.99,
-      description: 'Flagship Samsung phone with S Pen',
-      shortDesc: 'Android flagship',
-      attributes: { brand: 'Samsung', storage: '512GB', color: 'Phantom Black' },
-    },
-    {
-      name: 'MacBook Pro 16"',
-      sku: 'EL-MB-003',
-      price: 2499.99,
-      description: 'M3 Max chip with 36GB RAM',
-      shortDesc: 'Professional laptop',
-      attributes: { brand: 'Apple', ram: '36GB', processor: 'M3 Max' },
-    },
-    {
-      name: 'Dell XPS 15',
-      sku: 'EL-DX-004',
-      price: 1899.99,
-      description: 'Intel i9 with NVIDIA RTX 4060',
-      shortDesc: 'High-performance laptop',
-      attributes: { brand: 'Dell', ram: '32GB', processor: 'Intel i9' },
-    },
-    {
-      name: 'iPad Pro 12.9"',
-      sku: 'EL-IP-005',
-      price: 1099.99,
-      description: 'M2 chip tablet with Magic Keyboard',
-      shortDesc: 'Premium tablet',
-      attributes: { brand: 'Apple', storage: '256GB', screen: '12.9 inch' },
-    },
-    {
-      name: 'Sony WH-1000XM5',
-      sku: 'EL-SW-006',
-      price: 399.99,
-      description: 'Noise cancelling headphones',
-      shortDesc: 'Premium headphones',
-      attributes: { brand: 'Sony', type: 'Over-ear', connectivity: 'Bluetooth' },
-    },
-    {
-      name: 'AirPods Pro 2',
-      sku: 'EL-AP-007',
-      price: 249.99,
-      description: 'Active noise cancellation earbuds',
-      shortDesc: 'True wireless earbuds',
-      attributes: { brand: 'Apple', type: 'In-ear', feature: 'ANC' },
-    },
-    {
-      name: 'Apple Watch Ultra 2',
-      sku: 'EL-AW-008',
-      price: 799.99,
-      description: 'Rugged smartwatch for athletes',
-      shortDesc: 'Sports smartwatch',
-      attributes: { brand: 'Apple', display: 'Titanium', water_resistance: '100m' },
-    },
-    {
-      name: 'Samsung 55" OLED TV',
-      sku: 'EL-ST-009',
-      price: 1499.99,
-      description: '4K OLED Smart TV with AI upscaling',
-      shortDesc: '4K OLED Television',
-      attributes: { brand: 'Samsung', size: '55 inch', resolution: '4K' },
-    },
-    {
-      name: 'LG 65" QNED TV',
-      sku: 'EL-LT-010',
-      price: 1799.99,
-      description: 'Quantum dot LED 4K TV',
-      shortDesc: '4K QNED TV',
-      attributes: { brand: 'LG', size: '65 inch', resolution: '4K' },
-    },
-    {
-      name: 'PlayStation 5',
-      sku: 'EL-PS-011',
-      price: 499.99,
-      description: 'Latest gaming console from Sony',
-      shortDesc: 'Gaming console',
-      attributes: { brand: 'Sony', storage: '1TB', type: 'Console' },
-    },
-    {
-      name: 'Xbox Series X',
-      sku: 'EL-XB-012',
-      price: 499.99,
-      description: 'Microsoft gaming console 4K 120fps',
-      shortDesc: 'Gaming console',
-      attributes: { brand: 'Microsoft', storage: '1TB', type: 'Console' },
-    },
-    {
-      name: 'Nintendo Switch OLED',
-      sku: 'EL-NS-013',
-      price: 349.99,
-      description: 'Portable gaming console with OLED',
-      shortDesc: 'Portable console',
-      attributes: { brand: 'Nintendo', screen: 'OLED', type: 'Portable' },
-    },
-    {
-      name: 'Canon EOS R6 Mark II',
-      sku: 'EL-CR-014',
-      price: 2499.99,
-      description: 'Full-frame mirrorless camera',
-      shortDesc: 'Professional camera',
-      attributes: { brand: 'Canon', megapixels: '24MP', type: 'Mirrorless' },
-    },
-    {
-      name: 'DJI Mini 4 Pro',
-      sku: 'EL-DJ-015',
-      price: 759.99,
-      description: 'Compact drone with 4K camera',
-      shortDesc: 'Camera drone',
-      attributes: { brand: 'DJI', camera: '4K', weight: '249g' },
-    },
-    {
-      name: 'GoPro Hero 12 Black',
-      sku: 'EL-GP-016',
-      price: 399.99,
-      description: 'Action camera with 5.3K video',
-      shortDesc: 'Action camera',
-      attributes: { brand: 'GoPro', video: '5.3K', waterproof: 'Yes' },
-    },
-    {
-      name: 'Logitech MX Master 3S',
-      sku: 'EL-LM-017',
-      price: 99.99,
-      description: 'Wireless ergonomic mouse',
-      shortDesc: 'Premium mouse',
-      attributes: { brand: 'Logitech', type: 'Wireless', dpi: '8000' },
-    },
-    {
-      name: 'Keychron K2 Keyboard',
-      sku: 'EL-KK-018',
-      price: 89.99,
-      description: 'Mechanical wireless keyboard',
-      shortDesc: 'Mechanical keyboard',
-      attributes: { brand: 'Keychron', switches: 'Gateron', connectivity: 'Bluetooth' },
-    },
-    {
-      name: 'Anker PowerBank 20000mAh',
-      sku: 'EL-AP-019',
-      price: 49.99,
-      description: 'High-capacity portable charger',
-      shortDesc: 'Power bank',
-      attributes: { brand: 'Anker', capacity: '20000mAh', ports: '2x USB-C' },
-    },
-    {
-      name: 'Samsung T7 SSD 1TB',
-      sku: 'EL-SS-020',
-      price: 129.99,
-      description: 'Portable solid state drive',
-      shortDesc: 'External SSD',
-      attributes: { brand: 'Samsung', capacity: '1TB', speed: '1050MB/s' },
-    },
-    {
-      name: 'Ring Video Doorbell',
-      sku: 'EL-RV-021',
-      price: 99.99,
-      description: 'Smart doorbell with HD video',
-      shortDesc: 'Smart doorbell',
-      attributes: { brand: 'Ring', video: '1080p', feature: 'Motion detection' },
-    },
-    {
-      name: 'Nest Thermostat',
-      sku: 'EL-NT-022',
-      price: 129.99,
-      description: 'Smart learning thermostat',
-      shortDesc: 'Smart thermostat',
-      attributes: { brand: 'Google', type: 'Smart', connectivity: 'WiFi' },
-    },
-    {
-      name: 'Amazon Echo Dot 5th Gen',
-      sku: 'EL-AE-023',
-      price: 49.99,
-      description: 'Smart speaker with Alexa',
-      shortDesc: 'Smart speaker',
-      attributes: { brand: 'Amazon', assistant: 'Alexa', connectivity: 'WiFi' },
-    },
-    {
-      name: 'Philips Hue Starter Kit',
-      sku: 'EL-PH-024',
-      price: 199.99,
-      description: 'Smart lighting system',
-      shortDesc: 'Smart lights',
-      attributes: { brand: 'Philips', bulbs: '4x E27', colors: '16 million' },
-    },
-    {
-      name: 'Roomba j7+ Robot Vacuum',
-      sku: 'EL-RJ-025',
-      price: 799.99,
-      description: 'Self-emptying robot vacuum',
-      shortDesc: 'Robot vacuum',
-      attributes: { brand: 'iRobot', feature: 'Auto-empty', mapping: 'Smart' },
-    },
-  ];
-
-  for (const prod of electronicsData) {
-    await prisma.product.create({
-      data: {
-        name: prod.name,
-        slug: prod.sku.toLowerCase(),
-        sku: prod.sku,
-        description: prod.description,
-        shortDesc: prod.shortDesc,
-        categoryId: electronics.id,
-        basePrice: prod.price,
-        stock: Math.floor(Math.random() * 50) + 10,
-        status: 'PUBLISHED',
-        isActive: true,
-        isFeatured: Math.random() > 0.7,
-        attributes: prod.attributes,
-      },
-    });
-  }
-
-  console.log('✅ Electronics Products created (25 products)');
-
-  // ==================== FASHION SHOP ====================
-  console.log('🏪 Creating Fashion Products...');
-
-  const fashionData = [
-    {
-      name: 'Classic White T-Shirt',
-      sku: 'FS-TS-001',
-      price: 29.99,
-      description: '100% organic cotton t-shirt',
-      shortDesc: 'Basic cotton tee',
-      attributes: { material: 'Cotton', fit: 'Regular', gender: 'Unisex' },
-    },
-    {
-      name: 'Slim Fit Jeans',
-      sku: 'FS-JN-002',
-      price: 79.99,
-      description: 'Stretch denim jeans',
-      shortDesc: 'Comfortable jeans',
-      attributes: { material: 'Denim', fit: 'Slim', color: 'Dark Blue' },
-    },
-    {
-      name: 'Leather Jacket',
-      sku: 'FS-LJ-003',
-      price: 299.99,
-      description: 'Genuine leather biker jacket',
-      shortDesc: 'Premium leather jacket',
-      attributes: { material: 'Leather', style: 'Biker', lining: 'Polyester' },
-    },
-    {
-      name: 'Wool Blend Coat',
-      sku: 'FS-WC-004',
-      price: 249.99,
-      description: 'Elegant winter coat',
-      shortDesc: 'Winter coat',
-      attributes: { material: 'Wool Blend', season: 'Winter', closure: 'Button' },
-    },
-    {
-      name: 'Running Sneakers',
-      sku: 'FS-RS-005',
-      price: 129.99,
-      description: 'Lightweight running shoes',
-      shortDesc: 'Sport sneakers',
-      attributes: { brand: 'Nike', type: 'Running', sole: 'Rubber' },
-    },
-    {
-      name: 'Canvas Sneakers',
-      sku: 'FS-CS-006',
-      price: 69.99,
-      description: 'Classic canvas shoes',
-      shortDesc: 'Casual sneakers',
-      attributes: { material: 'Canvas', style: 'Classic', color: 'White' },
-    },
-    {
-      name: 'Summer Dress',
-      sku: 'FS-SD-007',
-      price: 89.99,
-      description: 'Floral print summer dress',
-      shortDesc: 'Floral dress',
-      attributes: { material: 'Cotton', length: 'Midi', pattern: 'Floral' },
-    },
-    {
-      name: 'Business Suit',
-      sku: 'FS-BS-008',
-      price: 399.99,
-      description: 'Two-piece formal suit',
-      shortDesc: 'Formal suit',
-      attributes: { material: 'Wool', pieces: '2', fit: 'Tailored' },
-    },
-    {
-      name: 'Polo Shirt',
-      sku: 'FS-PS-009',
-      price: 49.99,
-      description: 'Classic polo shirt',
-      shortDesc: 'Casual polo',
-      attributes: { material: 'Pique Cotton', collar: 'Polo', fit: 'Regular' },
-    },
-    {
-      name: 'Hoodie Sweatshirt',
-      sku: 'FS-HS-010',
-      price: 59.99,
-      description: 'Comfortable pullover hoodie',
-      shortDesc: 'Casual hoodie',
-      attributes: { material: 'Cotton Blend', style: 'Pullover', pocket: 'Kangaroo' },
-    },
-    {
-      name: 'Yoga Pants',
-      sku: 'FS-YP-011',
-      price: 69.99,
-      description: 'High-waist yoga leggings',
-      shortDesc: 'Fitness leggings',
-      attributes: { material: 'Spandex', fit: 'Compression', waist: 'High' },
-    },
-    {
-      name: 'Sports Bra',
-      sku: 'FS-SB-012',
-      price: 39.99,
-      description: 'High-support sports bra',
-      shortDesc: 'Athletic bra',
-      attributes: { support: 'High', material: 'Nylon', closure: 'Hook' },
-    },
-    {
-      name: 'Winter Beanie',
-      sku: 'FS-WB-013',
-      price: 24.99,
-      description: 'Knit winter hat',
-      shortDesc: 'Warm beanie',
-      attributes: { material: 'Acrylic', style: 'Cuff', season: 'Winter' },
-    },
-    {
-      name: 'Baseball Cap',
-      sku: 'FS-BC-014',
-      price: 29.99,
-      description: 'Adjustable baseball cap',
-      shortDesc: 'Casual cap',
-      attributes: { material: 'Cotton', closure: 'Adjustable', brim: 'Curved' },
-    },
-    {
-      name: 'Leather Belt',
-      sku: 'FS-LB-015',
-      price: 49.99,
-      description: 'Genuine leather belt',
-      shortDesc: 'Dress belt',
-      attributes: { material: 'Leather', width: '35mm', buckle: 'Metal' },
-    },
-    {
-      name: 'Silk Tie',
-      sku: 'FS-ST-016',
-      price: 39.99,
-      description: 'Classic silk necktie',
-      shortDesc: 'Formal tie',
-      attributes: { material: 'Silk', width: 'Standard', pattern: 'Striped' },
-    },
-    {
-      name: 'Leather Wallet',
-      sku: 'FS-LW-017',
-      price: 79.99,
-      description: 'Bifold leather wallet',
-      shortDesc: "Men's wallet",
-      attributes: { material: 'Leather', style: 'Bifold', slots: '8 cards' },
-    },
-    {
-      name: 'Designer Handbag',
-      sku: 'FS-DH-018',
-      price: 599.99,
-      description: 'Luxury leather handbag',
-      shortDesc: 'Premium handbag',
-      attributes: { material: 'Leather', style: 'Tote', closure: 'Magnetic' },
-    },
-    {
-      name: 'Backpack',
-      sku: 'FS-BP-019',
-      price: 89.99,
-      description: 'Waterproof laptop backpack',
-      shortDesc: 'Travel backpack',
-      attributes: { capacity: '30L', laptop: '15 inch', material: 'Nylon' },
-    },
-    {
-      name: 'Sunglasses',
-      sku: 'FS-SG-020',
-      price: 149.99,
-      description: 'Polarized UV protection',
-      shortDesc: 'Designer sunglasses',
-      attributes: { lens: 'Polarized', frame: 'Acetate', UV: '100%' },
-    },
-    {
-      name: 'Wristwatch',
-      sku: 'FS-WW-021',
-      price: 299.99,
-      description: 'Automatic mechanical watch',
-      shortDesc: 'Luxury watch',
-      attributes: { movement: 'Automatic', material: 'Stainless Steel', waterproof: '50m' },
-    },
-    {
-      name: 'Scarf',
-      sku: 'FS-SC-022',
-      price: 44.99,
-      description: 'Cashmere blend scarf',
-      shortDesc: 'Winter scarf',
-      attributes: { material: 'Cashmere Blend', length: '180cm', season: 'Winter' },
-    },
-    {
-      name: 'Gloves',
-      sku: 'FS-GL-023',
-      price: 34.99,
-      description: 'Touchscreen leather gloves',
-      shortDesc: 'Winter gloves',
-      attributes: { material: 'Leather', lining: 'Fleece', feature: 'Touchscreen' },
-    },
-    {
-      name: 'Socks Pack',
-      sku: 'FS-SK-024',
-      price: 19.99,
-      description: '6-pack cotton socks',
-      shortDesc: 'Athletic socks',
-      attributes: { material: 'Cotton', quantity: '6 pairs', style: 'Crew' },
-    },
-    {
-      name: 'Underwear Set',
-      sku: 'FS-UW-025',
-      price: 39.99,
-      description: '3-pack boxer briefs',
-      shortDesc: 'Comfort underwear',
-      attributes: { material: 'Cotton', quantity: '3 pieces', fit: 'Regular' },
-    },
-  ];
-
-  for (const prod of fashionData) {
-    await prisma.product.create({
-      data: {
-        name: prod.name,
-        slug: prod.sku.toLowerCase(),
-        sku: prod.sku,
-        description: prod.description,
-        shortDesc: prod.shortDesc,
-        categoryId: fashion.id,
-        basePrice: prod.price,
-        stock: Math.floor(Math.random() * 100) + 20,
-        status: 'PUBLISHED',
-        isActive: true,
-        isFeatured: Math.random() > 0.7,
-        attributes: prod.attributes,
-      },
-    });
-  }
-
-  console.log('✅ Fashion Products created (25 products)');
-
-  // ==================== BOOKS & EDUCATION SHOP ====================
-  console.log('🏪 Creating Books & Education Products...');
-
-  const booksEducationData = [
-    {
-      name: 'JavaScript: The Complete Guide',
-      sku: 'BE-JS-001',
-      price: 49.99,
-      description: 'Comprehensive JavaScript programming book',
-      shortDesc: 'JavaScript guide',
-      attributes: { author: 'David Flanagan', pages: '1096', format: 'Hardcover' },
-    },
-    {
-      name: 'Python for Data Science',
-      sku: 'BE-PY-002',
-      price: 59.99,
-      description: 'Learn Python for data analysis',
-      shortDesc: 'Python data science',
-      attributes: { author: 'Jake VanderPlas', pages: '548', format: 'Paperback' },
-    },
-    {
-      name: 'Clean Code',
-      sku: 'BE-CC-003',
-      price: 44.99,
-      description: 'A handbook of agile software craftsmanship',
-      shortDesc: 'Code quality guide',
-      attributes: { author: 'Robert Martin', pages: '464', format: 'Paperback' },
-    },
-    {
-      name: 'Design Patterns',
-      sku: 'BE-DP-004',
-      price: 54.99,
-      description: 'Elements of reusable object-oriented software',
-      shortDesc: 'Software patterns',
-      attributes: { author: 'Gang of Four', pages: '395', format: 'Hardcover' },
-    },
-    {
-      name: 'The Pragmatic Programmer',
-      sku: 'BE-PP-005',
-      price: 39.99,
-      description: 'Your journey to mastery',
-      shortDesc: 'Programming mastery',
-      attributes: { author: 'Hunt & Thomas', pages: '352', format: 'Paperback' },
-    },
-    {
-      name: 'Introduction to Algorithms',
-      sku: 'BE-IA-006',
-      price: 89.99,
-      description: 'Comprehensive algorithms textbook',
-      shortDesc: 'Algorithms guide',
-      attributes: { author: 'CLRS', pages: '1312', format: 'Hardcover' },
-    },
-    {
-      name: "You Don't Know JS",
-      sku: 'BE-YD-007',
-      price: 119.99,
-      description: '6-book series on JavaScript',
-      shortDesc: 'JS book series',
-      attributes: { author: 'Kyle Simpson', books: '6', format: 'Set' },
-    },
-    {
-      name: 'Head First Design Patterns',
-      sku: 'BE-HF-008',
-      price: 49.99,
-      description: 'Brain-friendly guide to patterns',
-      shortDesc: 'Design patterns',
-      attributes: { author: 'Freeman & Robson', pages: '694', format: 'Paperback' },
-    },
-    {
-      name: 'Refactoring',
-      sku: 'BE-RF-009',
-      price: 54.99,
-      description: 'Improving the design of existing code',
-      shortDesc: 'Code refactoring',
-      attributes: { author: 'Martin Fowler', pages: '448', format: 'Hardcover' },
-    },
-    {
-      name: 'Database System Concepts',
-      sku: 'BE-DB-010',
-      price: 79.99,
-      description: 'Comprehensive database textbook',
-      shortDesc: 'Database systems',
-      attributes: { author: 'Silberschatz', pages: '1376', format: 'Hardcover' },
-    },
-    {
-      name: 'Machine Learning Yearning',
-      sku: 'BE-ML-011',
-      price: 39.99,
-      description: 'Technical strategy for AI engineers',
-      shortDesc: 'ML strategy guide',
-      attributes: { author: 'Andrew Ng', pages: '118', format: 'Paperback' },
-    },
-    {
-      name: 'Deep Learning',
-      sku: 'BE-DL-012',
-      price: 69.99,
-      description: 'MIT Press deep learning book',
-      shortDesc: 'Deep learning guide',
-      attributes: { author: 'Goodfellow et al', pages: '800', format: 'Hardcover' },
-    },
-    {
-      name: 'React Course - Complete Bundle',
-      sku: 'BE-RC-013',
-      price: 199.99,
-      description: '50 hours of React video training',
-      shortDesc: 'React video course',
-      attributes: { format: 'Video', duration: '50 hours', level: 'All levels' },
-    },
-    {
-      name: 'AWS Certified Solutions Course',
-      sku: 'BE-AW-014',
-      price: 149.99,
-      description: 'Complete AWS certification prep',
-      shortDesc: 'AWS certification',
-      attributes: { format: 'Video', duration: '40 hours', certification: 'SAA-C03' },
-    },
-    {
-      name: 'Full Stack Web Development',
-      sku: 'BE-FS-015',
-      price: 299.99,
-      description: 'Bootcamp-style complete course',
-      shortDesc: 'Full stack course',
-      attributes: { format: 'Video', duration: '100 hours', projects: '20+' },
-    },
-    {
-      name: 'Docker & Kubernetes Guide',
-      sku: 'BE-DK-016',
-      price: 44.99,
-      description: 'Container orchestration mastery',
-      shortDesc: 'DevOps guide',
-      attributes: { author: 'Nigel Poulton', pages: '384', format: 'Paperback' },
-    },
-    {
-      name: 'System Design Interview',
-      sku: 'BE-SD-017',
-      price: 39.99,
-      description: "Insider's guide to system design",
-      shortDesc: 'Interview prep',
-      attributes: { author: 'Alex Xu', pages: '280', format: 'Paperback' },
-    },
-    {
-      name: 'Cracking the Coding Interview',
-      sku: 'BE-CI-018',
-      price: 49.99,
-      description: '189 programming questions',
-      shortDesc: 'Interview questions',
-      attributes: { author: 'Gayle McDowell', pages: '708', format: 'Paperback' },
-    },
-    {
-      name: 'Eloquent JavaScript',
-      sku: 'BE-EJ-019',
-      price: 34.99,
-      description: 'Modern introduction to programming',
-      shortDesc: 'JS programming',
-      attributes: { author: 'Marijn Haverbeke', pages: '472', format: 'Paperback' },
-    },
-    {
-      name: 'CSS: The Definitive Guide',
-      sku: 'BE-CS-020',
-      price: 59.99,
-      description: 'Visual presentation for the web',
-      shortDesc: 'CSS guide',
-      attributes: { author: 'Eric Meyer', pages: '1096', format: 'Paperback' },
-    },
-    {
-      name: 'Git for Professionals',
-      sku: 'BE-GI-021',
-      price: 29.99,
-      description: 'Version control mastery',
-      shortDesc: 'Git guide',
-      attributes: { author: 'Jon Loeliger', pages: '456', format: 'Paperback' },
-    },
-    {
-      name: 'Linux Command Line',
-      sku: 'BE-LC-022',
-      price: 39.99,
-      description: 'Complete introduction to Linux',
-      shortDesc: 'Linux guide',
-      attributes: { author: 'William Shotts', pages: '504', format: 'Paperback' },
-    },
-    {
-      name: 'Node.js Design Patterns',
-      sku: 'BE-ND-023',
-      price: 49.99,
-      description: 'Scalable Node.js applications',
-      shortDesc: 'Node.js patterns',
-      attributes: { author: 'Mario Casciaro', pages: '664', format: 'Paperback' },
-    },
-    {
-      name: 'Microservices Patterns',
-      sku: 'BE-MP-024',
-      price: 54.99,
-      description: 'Building microservices architecture',
-      shortDesc: 'Microservices guide',
-      attributes: { author: 'Chris Richardson', pages: '520', format: 'Paperback' },
-    },
-    {
-      name: 'TypeScript Deep Dive',
-      sku: 'BE-TS-025',
-      price: 44.99,
-      description: 'Complete TypeScript guide',
-      shortDesc: 'TypeScript guide',
-      attributes: { author: 'Basarat Syed', pages: '368', format: 'Paperback' },
-    },
-  ];
-
-  for (const prod of booksEducationData) {
-    await prisma.product.create({
-      data: {
-        name: prod.name,
-        slug: prod.sku.toLowerCase(),
-        sku: prod.sku,
-        description: prod.description,
-        shortDesc: prod.shortDesc,
-        categoryId: booksEducation.id,
-        basePrice: prod.price,
-        stock: Math.floor(Math.random() * 80) + 15,
-        status: 'PUBLISHED',
-        isActive: true,
-        isFeatured: Math.random() > 0.7,
-        attributes: prod.attributes,
-      },
-    });
-  }
-
-  console.log('✅ Books & Education Products created (25 products)');
-
-  // Create default settings
+  // 3. SETTINGS
   await prisma.setting.upsert({
     where: { key: 'site_name' },
     update: {},
     create: {
       key: 'site_name',
-      value: JSON.parse(JSON.stringify({ value: 'My E-commerce Store' })),
+      value: JSON.parse(JSON.stringify({ value: 'Kai Tech Store' })),
       group: 'general',
       isPublic: true,
     },
   });
-
   await prisma.setting.upsert({
     where: { key: 'currency' },
     update: {},
     create: {
       key: 'currency',
-      value: JSON.parse(JSON.stringify({ code: 'USD', symbol: '$' })),
+      value: JSON.parse(JSON.stringify({ code: 'VND', symbol: '₫' })),
       group: 'general',
       isPublic: true,
     },
   });
 
-  console.log('✅ Settings created');
-
-  console.log('🎉 Seed completed!');
+  console.log('🎉 TOÀN BỘ QUÁ TRÌNH SEED HOÀN TẤT!');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seed failed:', e);
+    console.error('❌ Lỗi Seed:', e);
     process.exit(1);
   })
   .finally(async () => {

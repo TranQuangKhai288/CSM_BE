@@ -19,6 +19,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:seed": "ts-node prisma/seed.ts",
+    "prisma:clear": "ts-node prisma/clear.ts",
+    "prisma:reset": "npm run prisma:clear && npm run prisma:seed",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",

@@ -5,6 +5,7 @@ import { ConflictError, NotFoundError, BadRequestError } from '@common/utils/err
 import { CACHE_KEYS, CACHE_TTL } from '@common/constants';
 import { RESPONSE_CODES } from '@common/constants/response-codes';
 import eventEmitter, { AppEvents } from '@core/events/event-emitter.service';
+import { convertDecimalFields, convertDecimalArray } from '@common/utils/prisma-helpers';
 
 class ProductsService {
   // Generate SKU from name or random
@@ -103,7 +104,7 @@ class ProductsService {
     ]);
 
     return {
-      data: products,
+      data: convertDecimalArray(products),
       meta: {
         total,
         page,
@@ -136,10 +137,12 @@ class ProductsService {
       throw new NotFoundError('Product not found', RESPONSE_CODES.PRODUCT_NOT_FOUND);
     }
 
-    // Cache result
-    await redisService.setJSON(CACHE_KEYS.PRODUCT(id), product, CACHE_TTL.MEDIUM);
+    const converted = convertDecimalFields(product);
 
-    return product;
+    // Cache result
+    await redisService.setJSON(CACHE_KEYS.PRODUCT(id), converted, CACHE_TTL.MEDIUM);
+
+    return converted;
   }
 
   // Get product by slug
@@ -161,7 +164,7 @@ class ProductsService {
       throw new NotFoundError('Product not found', RESPONSE_CODES.PRODUCT_NOT_FOUND);
     }
 
-    return product;
+    return convertDecimalFields(product);
   }
 
   // Get product by SKU
@@ -183,7 +186,7 @@ class ProductsService {
       throw new NotFoundError('Product not found', RESPONSE_CODES.PRODUCT_NOT_FOUND);
     }
 
-    return product;
+    return convertDecimalFields(product);
   }
 
   // Create new product
@@ -233,8 +236,11 @@ class ProductsService {
     }
 
     // Validate pricing
-    if (data.compareAtPrice && data.compareAtPrice <= data.price) {
-      throw new BadRequestError('Compare at price must be greater than selling price');
+    if (data.salePrice && data.salePrice > data.basePrice) {
+      throw new BadRequestError('Sale price must be greater than base price');
+    }
+    if (data.costPrice && data.costPrice > data.basePrice) {
+      throw new BadRequestError('Cost price must be less than base price');
     }
 
     // Determine status
@@ -252,8 +258,8 @@ class ProductsService {
         description: data.description,
         shortDesc: data.shortDescription,
         categoryId: data.categoryId,
-        basePrice: data.price,
-        salePrice: data.compareAtPrice,
+        basePrice: data.basePrice,
+        salePrice: data.salePrice,
         costPrice: data.costPrice,
         stock: data.stockQuantity || 0,
         lowStock: data.lowStockThreshold || 10,
@@ -287,7 +293,7 @@ class ProductsService {
       });
     }
 
-    return product;
+    return convertDecimalFields(product);
   }
 
   // Update product
@@ -350,16 +356,14 @@ class ProductsService {
     }
 
     // Validate pricing if changing
-    const newPrice = data.price !== undefined ? data.price : Number(product.basePrice);
-    const newCompareAtPrice =
-      data.compareAtPrice !== undefined
-        ? data.compareAtPrice
-        : product.salePrice
-          ? Number(product.salePrice)
-          : null;
+    const newBasePrice = data.basePrice !== undefined ? data.basePrice : Number(product.basePrice);
 
-    if (newCompareAtPrice && newCompareAtPrice <= newPrice) {
-      throw new BadRequestError('Compare at price must be greater than selling price');
+    if (data.salePrice && data.salePrice > newBasePrice) {
+      throw new BadRequestError('Sale price must be greater than base price');
+    }
+
+    if (data.costPrice && data.costPrice > newBasePrice) {
+      throw new BadRequestError('Cost price must be less than base price');
     }
 
     const oldStock = product.stock;
@@ -387,8 +391,8 @@ class ProductsService {
         ...(data.description !== undefined && { description: data.description }),
         ...(data.shortDescription !== undefined && { shortDesc: data.shortDescription }),
         ...(data.categoryId && { categoryId: data.categoryId }),
-        ...(data.price !== undefined && { basePrice: data.price }),
-        ...(data.compareAtPrice !== undefined && { salePrice: data.compareAtPrice }),
+        ...(data.basePrice !== undefined && { basePrice: data.basePrice }),
+        ...(data.salePrice !== undefined && { salePrice: data.salePrice }),
         ...(data.costPrice !== undefined && { costPrice: data.costPrice }),
         ...(data.stockQuantity !== undefined && { stock: data.stockQuantity }),
         ...(data.lowStockThreshold !== undefined && { lowStock: data.lowStockThreshold }),
@@ -428,7 +432,7 @@ class ProductsService {
       eventEmitter.emitEvent(AppEvents.PRODUCT_LOW_STOCK, { productId: id, stock: updated.stock });
     }
 
-    return updated;
+    return convertDecimalFields(updated);
   }
 
   // Delete product

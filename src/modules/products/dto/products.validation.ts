@@ -40,16 +40,15 @@ export const createProductValidation = [
     .withMessage('Invalid category ID format'),
 
   // Pricing validation
-  body('price')
+  body('basePrice')
     .notEmpty()
-    .withMessage('Price is required')
+    .withMessage('Base price is required')
     .isFloat({ min: 0 })
-    .withMessage('Price must be a positive number'),
-
-  body('compareAtPrice')
+    .withMessage('Base price must be a positive number'),
+  body('salePrice')
     .optional({ values: 'falsy' })
     .isFloat({ min: 0 })
-    .withMessage('Compare at price must be a positive number'),
+    .withMessage('Sale price must be a positive number'),
 
   body('costPrice')
     .optional({ values: 'falsy' })
@@ -176,7 +175,7 @@ export const updateProductValidation = [
     .isFloat({ min: 0 })
     .withMessage('Price must be a positive number'),
 
-  body('compareAtPrice')
+  body('salePrice')
     .optional({ values: 'falsy' })
     .custom((value) => value === null || (typeof value === 'number' && value >= 0))
     .withMessage('Compare at price must be a positive number or null'),
