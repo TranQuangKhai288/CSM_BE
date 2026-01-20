@@ -11,14 +11,11 @@ export function convertDecimalFields<T extends Record<string, any>>(obj: T): T {
   for (const key in result) {
     const value = result[key];
 
-    if (value instanceof Decimal) {
-      // Chuyển Decimal thành number
+    if (value && typeof value === 'object' && (value as any) instanceof Decimal) {
       result[key] = value.toNumber() as any;
     } else if (Array.isArray(value)) {
-      // Xử lý array
       result[key] = value.map((item) => convertDecimalFields(item)) as any;
     } else if (value && typeof value === 'object' && value.constructor === Object) {
-      // Xử lý nested object
       result[key] = convertDecimalFields(value);
     }
   }
