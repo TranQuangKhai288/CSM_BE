@@ -75,12 +75,60 @@ class App {
 
   private initializeRoutes(): void {
     // Health check
-    this.app.get('/health', (_req, res) => {
-      res.json({
+    this.app.get('/health', async (_req, res) => {
+      const healthStatus: any = {
         success: true,
         message: 'Server is running',
         timestamp: new Date().toISOString(),
-      });
+        services: {
+          server: {
+            status: 'healthy',
+            uptime: process.uptime(),
+          },
+          database: {
+            status: 'unknown',
+            message: '',
+          },
+          redis: {
+            status: 'unknown',
+            message: '',
+          },
+        },
+      };
+
+      // Check PostgreSQL database
+      try {
+        await prismaService.$queryRaw`SELECT 1`;
+        healthStatus.services.database.status = 'healthy';
+        healthStatus.services.database.message = 'Database connection is active';
+      } catch (error: any) {
+        healthStatus.success = false;
+        healthStatus.services.database.status = 'unhealthy';
+        healthStatus.services.database.message = error.message || 'Database connection failed';
+      }
+
+      // Check Redis
+      try {
+        const redisClient = redisService.getClient();
+        const isRedisConnected = redisClient.isOpen && redisClient.isReady;
+
+        if (isRedisConnected) {
+          // Try to ping Redis
+          await redisClient.ping();
+          healthStatus.services.redis.status = 'healthy';
+          healthStatus.services.redis.message = 'Redis connection is active';
+        } else {
+          healthStatus.services.redis.status = 'disconnected';
+          healthStatus.services.redis.message = 'Redis is not connected (running without cache)';
+        }
+      } catch (error: any) {
+        healthStatus.services.redis.status = 'unhealthy';
+        healthStatus.services.redis.message = error.message || 'Redis connection failed';
+      }
+
+      // Set HTTP status code based on overall health
+      const statusCode = healthStatus.success ? 200 : 503;
+      res.status(statusCode).json(healthStatus);
     });
 
     // API routes (all routes are now managed in src/routes/)
