@@ -98,6 +98,25 @@ class ProductsService {
               slug: true,
             },
           },
+          images: {
+            orderBy: {
+              order: 'asc',
+            },
+          },
+          variants: {
+            where: {
+              isActive: true,
+            },
+            select: {
+              id: true,
+              sku: true,
+              name: true,
+              attributes: true,
+              price: true,
+              stock: true,
+              isActive: true,
+            },
+          },
         },
       }),
       prismaService.product.count({ where }),
@@ -130,6 +149,16 @@ class ProductsService {
             slug: true,
           },
         },
+        images: {
+          orderBy: {
+            order: 'asc',
+          },
+        },
+        variants: {
+          where: {
+            isActive: true,
+          },
+        },
       },
     });
 
@@ -157,6 +186,16 @@ class ProductsService {
             slug: true,
           },
         },
+        images: {
+          orderBy: {
+            order: 'asc',
+          },
+        },
+        variants: {
+          where: {
+            isActive: true,
+          },
+        },
       },
     });
 
@@ -177,6 +216,16 @@ class ProductsService {
             id: true,
             name: true,
             slug: true,
+          },
+        },
+        images: {
+          orderBy: {
+            order: 'asc',
+          },
+        },
+        variants: {
+          where: {
+            isActive: true,
           },
         },
       },
@@ -279,8 +328,36 @@ class ProductsService {
             slug: true,
           },
         },
+        images: true,
       },
     });
+
+    // Handle images if provided
+    if (data.images && data.images.length > 0) {
+      const imageData = data.images.map((img, index) => {
+        // Support both string URLs and object format
+        if (typeof img === 'string') {
+          return {
+            productId: product.id,
+            url: img,
+            order: index,
+            isPrimary: index === 0,
+          };
+        } else {
+          return {
+            productId: product.id,
+            url: img.url,
+            alt: img.alt,
+            order: index,
+            isPrimary: img.isPrimary || index === 0,
+          };
+        }
+      });
+
+      await prismaService.productImage.createMany({
+        data: imageData,
+      });
+    }
 
     // Emit event
     eventEmitter.emitEvent(AppEvents.PRODUCT_CREATED, { productId: product.id });
@@ -293,7 +370,26 @@ class ProductsService {
       });
     }
 
-    return convertDecimalFields(product);
+    // Fetch complete product with images
+    const completeProduct = await prismaService.product.findUnique({
+      where: { id: product.id },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        images: {
+          orderBy: {
+            order: 'asc',
+          },
+        },
+      },
+    });
+
+    return convertDecimalFields(completeProduct);
   }
 
   // Update product
@@ -415,6 +511,41 @@ class ProductsService {
       },
     });
 
+    // Handle images update if provided
+    if (data.images !== undefined) {
+      // Delete existing images
+      await prismaService.productImage.deleteMany({
+        where: { productId: id },
+      });
+
+      // Create new images if any
+      if (data.images.length > 0) {
+        const imageData = data.images.map((img, index) => {
+          // Support both string URLs and object format
+          if (typeof img === 'string') {
+            return {
+              productId: id,
+              url: img,
+              order: index,
+              isPrimary: index === 0,
+            };
+          } else {
+            return {
+              productId: id,
+              url: img.url,
+              alt: img.alt,
+              order: index,
+              isPrimary: img.isPrimary || index === 0,
+            };
+          }
+        });
+
+        await prismaService.productImage.createMany({
+          data: imageData,
+        });
+      }
+    }
+
     // Clear cache
     await redisService.del(CACHE_KEYS.PRODUCT(id));
 
@@ -432,7 +563,26 @@ class ProductsService {
       eventEmitter.emitEvent(AppEvents.PRODUCT_LOW_STOCK, { productId: id, stock: updated.stock });
     }
 
-    return convertDecimalFields(updated);
+    // Fetch complete product with updated images
+    const completeProduct = await prismaService.product.findUnique({
+      where: { id },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        images: {
+          orderBy: {
+            order: 'asc',
+          },
+        },
+      },
+    });
+
+    return convertDecimalFields(completeProduct);
   }
 
   // Delete product

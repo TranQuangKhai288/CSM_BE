@@ -20,8 +20,8 @@ export interface CreateProductDto {
   // Stored as array of attribute objects: [{ key, label?, value }]
   attributes?: Attribute[];
 
-  // Media
-  images?: string[];
+  // Media - Support both old (string[]) and new format (object[])
+  images?: Array<{ url: string; isPrimary?: boolean; alt?: string }> | string[];
   featuredImage?: string;
 
   // Status
@@ -59,8 +59,8 @@ export interface UpdateProductDto {
   // Stored as array of attribute objects: [{ key, label?, value }]
   attributes?: Attribute[];
 
-  // Media
-  images?: string[];
+  // Media - Support both old (string[]) and new format (object[])
+  images?: Array<{ url: string; isPrimary?: boolean; alt?: string }> | string[];
   featuredImage?: string;
 
   // Status

@@ -90,13 +90,32 @@ export const createProductValidation = [
     })
     .withMessage('Each attribute must have {key: string, label?: string, value: any}'),
 
-  // Media validation
+  // Media validation - support both string URLs and object format
   body('images').optional({ values: 'falsy' }).isArray().withMessage('Images must be an array'),
 
   body('images.*')
     .optional({ values: 'falsy' })
-    .isURL()
-    .withMessage('Each image must be a valid URL'),
+    .custom((value) => {
+      // Support both string URL and object with url property
+      if (typeof value === 'string') {
+        // Validate string URL
+        return /^https?:\/\/.+/.test(value);
+      } else if (typeof value === 'object' && value !== null) {
+        // Validate object format: { url, isPrimary?, alt? }
+        if (typeof value.url !== 'string' || !/^https?:\/\/.+/.test(value.url)) {
+          throw new Error('Image object must have a valid URL');
+        }
+        if (value.isPrimary !== undefined && typeof value.isPrimary !== 'boolean') {
+          throw new Error('isPrimary must be a boolean');
+        }
+        if (value.alt !== undefined && typeof value.alt !== 'string') {
+          throw new Error('alt must be a string');
+        }
+        return true;
+      }
+      return false;
+    })
+    .withMessage('Each image must be a valid URL string or object with url property'),
 
   body('featuredImage')
     .optional({ values: 'falsy' })
@@ -222,12 +241,32 @@ export const updateProductValidation = [
     })
     .withMessage('Attributes must be array of {key, label?, value} or null'),
 
+  // Media validation - support both string URLs and object format
   body('images').optional({ values: 'falsy' }).isArray().withMessage('Images must be an array'),
 
   body('images.*')
     .optional({ values: 'falsy' })
-    .isURL()
-    .withMessage('Each image must be a valid URL'),
+    .custom((value) => {
+      // Support both string URL and object with url property
+      if (typeof value === 'string') {
+        // Validate string URL
+        return /^https?:\/\/.+/.test(value);
+      } else if (typeof value === 'object' && value !== null) {
+        // Validate object format: { url, isPrimary?, alt? }
+        if (typeof value.url !== 'string' || !/^https?:\/\/.+/.test(value.url)) {
+          throw new Error('Image object must have a valid URL');
+        }
+        if (value.isPrimary !== undefined && typeof value.isPrimary !== 'boolean') {
+          throw new Error('isPrimary must be a boolean');
+        }
+        if (value.alt !== undefined && typeof value.alt !== 'string') {
+          throw new Error('alt must be a string');
+        }
+        return true;
+      }
+      return false;
+    })
+    .withMessage('Each image must be a valid URL string or object with url property'),
 
   body('featuredImage')
     .optional({ values: 'falsy' })
