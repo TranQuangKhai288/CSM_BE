@@ -33,7 +33,7 @@ class EmailService {
         return;
       }
 
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         host: envConfig.get('SMTP_HOST'),
         port: envConfig.get('SMTP_PORT'),
         secure: envConfig.get('SMTP_SECURE'),

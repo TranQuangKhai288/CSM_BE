@@ -9,8 +9,8 @@ services:
     region: singapore # Change to your preferred region
     plan: free # Free tier
     branch: main
-    buildCommand: npm install && npx prisma generate && npm run build
-    startCommand: npm run deploy
+    buildCommand: npm install && npm run build:prod
+    startCommand: npm run start:prod
     envVars:
       - key: NODE_ENV
         value: production

@@ -389,6 +389,10 @@ class ProductsService {
       },
     });
 
+    if (!completeProduct) {
+      throw new NotFoundError('Product not found', RESPONSE_CODES.PRODUCT_NOT_FOUND);
+    }
+
     return convertDecimalFields(completeProduct);
   }
 
@@ -581,6 +585,10 @@ class ProductsService {
         },
       },
     });
+
+    if (!completeProduct) {
+      throw new NotFoundError('Product not found', RESPONSE_CODES.PRODUCT_NOT_FOUND);
+    }
 
     return convertDecimalFields(completeProduct);
   }
