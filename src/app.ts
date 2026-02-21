@@ -8,6 +8,11 @@ import { swaggerSpec, swaggerUiOptions } from './config/swagger.config';
 import envConfig from './config/env.config';
 import { loggerMiddleware } from './middleware/logger.middleware';
 import { rateLimitMiddleware } from './middleware/rate-limit.middleware';
+import {
+  sanitizeInput,
+  preventNoSQLInjection,
+  detectSQLInjection,
+} from './middleware/sanitization.middleware';
 import { errorHandler } from './common/utils/errors';
 import prismaService from './core/database/prisma.service';
 import redisService from './core/redis/redis.service';
@@ -50,6 +55,11 @@ class App {
     // Body parser
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+    // Security: Input sanitization (XSS, SQL, NoSQL injection prevention)
+    this.app.use(sanitizeInput);
+    this.app.use(preventNoSQLInjection);
+    this.app.use(detectSQLInjection);
 
     // Strip empty query params
     this.app.use((req, _res, next) => {
@@ -167,26 +177,52 @@ class App {
     await this.connectDatabase();
     await this.connectRedis();
 
-    this.app.listen(this.port, () => {
-      logger.info(`🚀 Server is running on port ${this.port}`);
+    const server = this.app.listen(this.port, () => {
+      logger.info(`✅ Server is running on port ${this.port}`);
       logger.info(`📚 API Docs available at http://localhost:${this.port}/api-docs`);
       logger.info(`🌍 Environment: ${envConfig.get('NODE_ENV')}`);
+      logger.info(`🎯 Ready to accept connections`);
     });
 
-    // Graceful shutdown
-    process.on('SIGTERM', async () => {
-      logger.info('SIGTERM received, shutting down gracefully');
-      await prismaService.onModuleDestroy();
-      await redisService.disconnect();
-      process.exit(0);
-    });
+    // Graceful shutdown handler
+    const gracefulShutdown = async (signal: string) => {
+      logger.info(`${signal} received, starting graceful shutdown...`);
 
-    process.on('SIGINT', async () => {
-      logger.info('SIGINT received, shutting down gracefully');
-      await prismaService.onModuleDestroy();
-      await redisService.disconnect();
-      process.exit(0);
-    });
+      // Stop accepting new connections
+      server.close(async (err) => {
+        if (err) {
+          logger.error('Error closing server:', err);
+        } else {
+          logger.info('✅ Server closed');
+        }
+
+        try {
+          // Close database connections
+          logger.info('Closing database connections...');
+          await prismaService.onModuleDestroy();
+
+          // Close Redis connections
+          logger.info('Closing Redis connections...');
+          await redisService.disconnect();
+
+          logger.info('✅ Graceful shutdown completed');
+          process.exit(0);
+        } catch (error) {
+          logger.error('Error during shutdown:', error);
+          process.exit(1);
+        }
+      });
+
+      // Force shutdown after 30 seconds
+      setTimeout(() => {
+        logger.error('⚠️ Forced shutdown after timeout');
+        process.exit(1);
+      }, 30000);
+    };
+
+    // Listen for termination signals
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
   }
 }
 

@@ -1,0 +1,102 @@
+# Render Blueprint for CSM E-Commerce Backend
+# https://render.com/docs/blueprint-spec
+
+services:
+  # Backend API Service
+  - type: web
+    name: csm-backend
+    runtime: node
+    region: singapore # Change to your preferred region
+    plan: free # Free tier
+    branch: main
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm run deploy
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: API_PREFIX
+        value: /api/v1
+      # Database - Auto-populated from render postgres
+      - key: DATABASE_URL
+        fromDatabase:
+          name: csm-database
+          property: connectionString
+      # Redis - If using Redis Cloud/Upstash
+      - key: REDIS_HOST
+        sync: false # Set manually in Render dashboard
+      - key: REDIS_PORT
+        value: 6379
+      - key: REDIS_PASSWORD
+        sync: false # Set manually
+      # JWT Secrets - IMPORTANT: Change these!
+      - key: JWT_SECRET
+        generateValue: true # Auto-generate secure secret
+      - key: JWT_REFRESH_SECRET
+        generateValue: true # Auto-generate secure secret
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 30d
+      # Supabase Storage
+      - key: SUPABASE_URL
+        sync: false # Set in Render dashboard
+      - key: SUPABASE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: csm-uploads
+      # Email Configuration
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_SECURE
+        value: false
+      - key: SMTP_USER
+        sync: false # Set your email
+      - key: SMTP_PASS
+        sync: false # Set your app password
+      - key: EMAIL_FROM
+        sync: false # Set your from address
+      # Rate Limiting
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 100
+      # CORS - IMPORTANT: Set to your frontend URL
+      - key: CORS_ORIGIN
+        sync: false # e.g., https://your-app.vercel.app
+      # Upload Settings
+      - key: MAX_FILE_SIZE
+        value: 5242880
+      - key: ALLOWED_FILE_TYPES
+        value: image/jpeg,image/png,image/webp,image/gif
+      # Pagination
+      - key: DEFAULT_PAGE_SIZE
+        value: 20
+      - key: MAX_PAGE_SIZE
+        value: 100
+      # Logging
+      - key: LOG_LEVEL
+        value: info
+    healthCheckPath: /health
+    autoDeploy: true
+
+# PostgreSQL Database
+databases:
+  - name: csm-database
+    databaseName: csm_db
+    user: csm_user
+    plan: free # Free tier: 90 days, then $7/month
+    region: singapore # Same region as web service
+    ipAllowList: [] # Leave empty for Render services access
+
+
+# Build Filter (optional)
+# Only deploy when these paths change
+# buildFilter:
+#   paths:
+#     - src/**
+#     - prisma/**
+#     - package.json
